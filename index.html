@@ -117,14 +117,21 @@
         
         if (!isDev) {
           var pathname = window.location.pathname;
-          // Ensure we don't end up in an infinite loop if already in /dist/
           if (pathname.indexOf('/dist/') === -1) {
             try {
-              var lastSlash = pathname.lastIndexOf('/');
-              var baseDir = lastSlash !== -1 ? pathname.substring(0, lastSlash + 1) : '/';
+              // Ensure directory URLs have a trailing slash for correct relative path resolution
+              var isFile = pathname.split('/').pop().indexOf('.') !== -1;
+              if (!isFile && !pathname.endsWith('/')) {
+                var newUrl = pathname + '/' + window.location.search + window.location.hash;
+                window.history.replaceState(null, '', newUrl);
+                pathname += '/';
+              }
+              
+              var pathParts = pathname.split('/');
+              if (isFile) pathParts.pop();
+              var baseDir = pathParts.join('/');
               if (!baseDir.endsWith('/')) baseDir += '/';
               
-              // First attempt to load it in-place using XMLHttpRequest to prevent redirect flicker
               var xhr = new XMLHttpRequest();
               xhr.open('GET', baseDir + 'dist/index.html?v=' + Date.now(), false);
               xhr.send();
@@ -138,7 +145,6 @@
               }
             } catch (e) {}
             
-            // Fallback: If XHR fails (e.g. cross-origin issues or strict cPanel rules), redirect to dist/index.html
             if (typeof window.stop === 'function') window.stop();
             window.location.replace(baseDir + 'dist/index.html' + window.location.search + window.location.hash);
           }
