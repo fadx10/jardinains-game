@@ -24,9 +24,14 @@ jobs:
         run: npm ci || npm install
 
       - name: 🏗️ Run Production Build
-        run: npm run build
+        run: |
+          npm run build
+          mkdir -p build_output
+          cp index.html build_output/
+          cp -r public/* build_output/ 2>/dev/null || true
+          cp .htaccess build_output/ 2>/dev/null || true
 
-      - name: 🚀 Deploy dist/ to Hostinger via FTP
+      - name: 🚀 Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -34,6 +39,6 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
           protocol: ftps
-          local-dir: ./dist/
-          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/jardinains/dist/' }}
+          local-dir: ./build_output/
+          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/jardinains/' }}
           dangerous-clean-slate: false
