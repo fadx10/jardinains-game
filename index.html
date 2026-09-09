@@ -104,6 +104,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Fredoka:wght@600;700;800&family=Sniglet:wght@400;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Automatic Production Redirect Safeguard -->
+    <script>
+      (function() {
+        var host = window.location.hostname;
+        var isDev = host === 'localhost' || 
+                    host === '127.0.0.1' || 
+                    window.location.port === '3000' ||
+                    host.indexOf('ais-dev-') !== -1;
+        
+        if (!isDev) {
+          // Check if this is the uncompiled root index.html containing raw TypeScript references
+          var hasRawTypeScript = !!document.querySelector('script[src="/src/main.tsx"]');
+          if (hasRawTypeScript) {
+            // Determine the subfolder pathname
+            var pathname = window.location.pathname;
+            var baseDir = pathname.endsWith('/') ? pathname : pathname.substring(0, pathname.lastIndexOf('/') + 1);
+            // Redirect cleanly to the single-file production index.html inside the dist folder
+            window.location.replace(baseDir + 'dist/index.html');
+          }
+        }
+      })();
+    </script>
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
     <div id="root"></div>
