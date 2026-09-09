@@ -35,5 +35,5 @@ jobs:
           port: ${{ secrets.FTP_PORT || 21 }}
           protocol: ftps
           local-dir: ./dist/
-          server-dir: public_html/jardinains/dist/
+          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/jardinains/dist/' }}
           dangerous-clean-slate: false
