@@ -8,7 +8,7 @@ interface JardinainsLogoProps {
 }
 
 /**
- * Authentic recreations of the original 2001 Magic Chopstick Games "Jardinains!" logo banner
+ * Authentic recreations of the original "Jardinains!" logo banner
  * featuring:
  * - Rounded cartoon brick frame (magenta, cyan, yellow, and red bricks with black mortar)
  * - Peeking garden gnome with spiky red cone hat, pink nose, and bushy white beard

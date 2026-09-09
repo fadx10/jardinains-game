@@ -16,7 +16,7 @@ import OptionsModal from './components/OptionsModal';
 import QuitModal from './components/QuitModal';
 import JardinainsLogo from './components/JardinainsLogo';
 
-import { Play, Pause, Settings, Trophy, HelpCircle, Info, Grid, Heart, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { Play, Pause, Settings, Trophy, HelpCircle, Info, Grid, Heart, Volume2, VolumeX, RotateCcw, Maximize2, Minimize2, Sparkles, X } from 'lucide-react';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -48,6 +48,17 @@ export default function App() {
   const [showLevelSelect, setShowLevelSelect] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showQuit, setShowQuit] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dismissFullscreenTip, setDismissFullscreenTip] = useState(false);
+
+  // Fullscreen detection listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   // Game Engine State (Refs for synchronous loop)
   const engineRef = useRef({
@@ -736,113 +747,194 @@ export default function App() {
   const topLevel = Math.max(userHighestLevel, 3);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-1 sm:p-3 md:p-4 font-sans text-slate-100 overflow-x-hidden relative select-none">
+    <div className={isFullscreen ? "w-screen h-screen bg-black flex flex-col items-center justify-center p-0 font-sans text-slate-100 overflow-hidden relative select-none" : "min-h-screen bg-slate-950 flex flex-col items-center justify-center p-1 sm:p-3 md:p-4 font-sans text-slate-100 overflow-x-hidden relative select-none"}>
       {/* Retro background ambient vignette */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-950/20 via-slate-950 to-black pointer-events-none" />
+      {!isFullscreen && (
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-950/20 via-slate-950 to-black pointer-events-none" />
+      )}
 
       {/* Main Jardinains Game Arcade Cabinet Window */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center my-auto">
+      <div className={isFullscreen ? "relative z-10 w-full h-full flex flex-col items-center justify-center" : "relative z-10 w-full max-w-5xl flex flex-col items-center my-auto"}>
         
-        {/* MOBILE & TABLET TOP HUD (Visible on screens < lg) */}
-        <div className="w-full lg:hidden bg-[#031c09] border-2 border-[#0b3b17] rounded-xl p-2 sm:p-2.5 mb-2 shadow-lg font-['Sniglet'] flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h1 
-                onClick={() => setGameState('menu')}
-                className="text-xl sm:text-2xl font-black text-[#4ade80] drop-shadow-[0_1px_0_#000] cursor-pointer"
-              >
-                Jardinains!
-              </h1>
-              <span className="text-[10px] sm:text-xs text-rose-300 font-bold flex items-center gap-0.5">
-                <Heart className="w-2.5 h-2.5 fill-rose-500 text-rose-500 animate-pulse" /> yesra
-              </span>
+        {/* MOBILE & TABLET TOP HUD (Visible on screens < lg when NOT in fullscreen) */}
+        {!isFullscreen && (
+          <div className="w-full lg:hidden bg-[#031c09] border-2 border-[#0b3b17] rounded-xl p-2 sm:p-2.5 mb-2 shadow-lg font-['Sniglet'] flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h1 
+                  onClick={() => setGameState('menu')}
+                  className="text-xl sm:text-2xl font-black text-[#4ade80] drop-shadow-[0_1px_0_#000] cursor-pointer"
+                >
+                  Jardinains!
+                </h1>
+                <span className="text-[10px] sm:text-xs text-rose-300 font-bold flex items-center gap-0.5">
+                  <Heart className="w-2.5 h-2.5 fill-rose-500 text-rose-500 animate-pulse" /> yesra
+                </span>
+              </div>
+
+              {/* Quick Action Icons */}
+              <div className="flex items-center gap-1.5">
+                {gameState === 'playing' ? (
+                  <button 
+                    onClick={() => { setGameState('paused'); stopMusic(); }}
+                    className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                    title="Pause Game"
+                  >
+                    <Pause className="w-3.5 h-3.5" />
+                  </button>
+                ) : gameState === 'paused' ? (
+                  <button 
+                    onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
+                    className="p-1.5 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-bold rounded-lg transition flex items-center justify-center"
+                    title="Resume Game"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                  </button>
+                ) : null}
+
+                <button 
+                  onClick={toggleFullscreen}
+                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  title={isFullscreen ? "Exit Fullscreen (F)" : "Enter Fullscreen (F)"}
+                >
+                  {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-300" /> : <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />}
+                </button>
+
+                <button 
+                  onClick={() => {
+                    const newSound = !options.soundEnabled;
+                    saveOptions({ ...options, soundEnabled: newSound });
+                  }}
+                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  title="Toggle Sound"
+                >
+                  {options.soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[#4ade80]" /> : <VolumeX className="w-3.5 h-3.5 text-rose-400" />}
+                </button>
+
+                <button 
+                  onClick={() => setShowLevelSelect(true)}
+                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  title="Select Level"
+                >
+                  <Grid className="w-3.5 h-3.5" />
+                </button>
+
+                <button 
+                  onClick={() => setShowOptions(true)}
+                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  title="Options"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
-            {/* Quick Action Icons */}
-            <div className="flex items-center gap-1.5">
-              {gameState === 'playing' ? (
-                <button 
-                  onClick={() => { setGameState('paused'); stopMusic(); }}
-                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
-                  title="Pause Game"
-                >
-                  <Pause className="w-3.5 h-3.5" />
-                </button>
-              ) : gameState === 'paused' ? (
-                <button 
-                  onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
-                  className="p-1.5 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-bold rounded-lg transition flex items-center justify-center"
-                  title="Resume Game"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                </button>
-              ) : null}
-
-              <button 
-                onClick={() => {
-                  const newSound = !options.soundEnabled;
-                  saveOptions({ ...options, soundEnabled: newSound });
-                }}
-                className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
-                title="Toggle Sound"
-              >
-                {options.soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[#4ade80]" /> : <VolumeX className="w-3.5 h-3.5 text-rose-400" />}
-              </button>
-
-              <button 
-                onClick={() => setShowLevelSelect(true)}
-                className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
-                title="Select Level"
-              >
-                <Grid className="w-3.5 h-3.5" />
-              </button>
-
-              <button 
-                onClick={() => setShowOptions(true)}
-                className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
-                title="Options"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
+            {/* Live Mobile Stats Bar */}
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 pt-1 border-t border-[#0e441c] text-center">
+              <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+                <div className="text-[10px] text-slate-300 font-bold">SCORE</div>
+                <div className="text-sm sm:text-base font-black text-[#86efac]">{score.toLocaleString()}</div>
+              </div>
+              <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+                <div className="text-[10px] text-slate-300 font-bold">LEVEL</div>
+                <div className="text-sm sm:text-base font-black text-[#86efac]">{currentLevelIdx + 1}</div>
+              </div>
+              <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+                <div className="text-[10px] text-slate-300 font-bold">LIVES</div>
+                <div className="text-sm sm:text-base font-black text-[#86efac] flex items-center justify-center gap-1">
+                  <span>{lives}</span>
+                  <Heart className="w-3 h-3 fill-rose-500 text-rose-500 inline" />
+                </div>
+              </div>
+              {engineRef.current.nainsJuggled > 0 ? (
+                <div className="bg-[#451a03] px-2 py-1 rounded-lg border border-amber-500/40 animate-pulse">
+                  <div className="text-[10px] text-amber-300 font-bold">JUGGLES</div>
+                  <div className="text-sm sm:text-base font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
+                </div>
+              ) : (
+                <div className="hidden sm:block bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+                  <div className="text-[10px] text-slate-300 font-bold">HIGH SCORE</div>
+                  <div className="text-sm sm:text-base font-black text-amber-300">{topScore.toLocaleString()}</div>
+                </div>
+              )}
             </div>
           </div>
+        )}
+        
+        {/* Authentic Jardinains Cabinet Layout */}
+        <div className={isFullscreen ? "w-full h-full bg-black p-0 border-0 shadow-none flex flex-col items-center justify-center relative" : "w-full bg-[#031c09] p-1.5 sm:p-2.5 md:p-3 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col lg:flex-row gap-2 sm:gap-3 items-stretch relative"}>
+          
+          {/* Authentic Black Gameplay Canvas Frame */}
+          <div className={isFullscreen ? "relative flex-1 bg-black w-full h-full max-h-screen aspect-[4/3] flex items-center justify-center touch-none overflow-hidden" : "relative flex-1 bg-black rounded-lg sm:rounded-xl border border-slate-700/80 sm:border-2 sm:border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] w-full max-h-[65vh] sm:max-h-[72vh] lg:max-h-none flex items-center justify-center touch-none"}>
+            
+            {/* FULLSCREEN MODE FLOATING HUD OVERLAY */}
+            {isFullscreen && (
+              <div className="absolute top-2 left-2 right-2 z-30 flex items-center justify-between bg-black/80 backdrop-blur-md border border-emerald-500/40 rounded-xl px-3 py-1.5 font-['Sniglet'] text-white text-xs shadow-lg animate-fade-in pointer-events-auto">
+                <div className="flex items-center gap-3 sm:gap-4 overflow-x-auto">
+                  <h1 
+                    onClick={() => setGameState('menu')}
+                    className="text-base sm:text-lg font-black text-[#4ade80] drop-shadow-[0_1px_0_#000] cursor-pointer shrink-0"
+                  >
+                    Jardinains!
+                  </h1>
+                  <span className="text-[#86efac] font-bold shrink-0">
+                    Score: <span className="font-mono text-white text-sm">{score.toLocaleString()}</span>
+                  </span>
+                  <span className="text-[#86efac] font-bold shrink-0">
+                    Level: <span className="font-mono text-white text-sm">{currentLevelIdx + 1}</span>
+                  </span>
+                  <span className="text-[#86efac] font-bold flex items-center gap-1 shrink-0">
+                    Lives: <span className="font-mono text-white text-sm">{lives}</span>
+                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 inline" />
+                  </span>
+                  {engineRef.current.nainsJuggled > 0 && (
+                    <span className="text-amber-300 font-extrabold animate-pulse shrink-0">
+                      Juggles: x{engineRef.current.nainsJuggled}
+                    </span>
+                  )}
+                </div>
 
-          {/* Live Mobile Stats Bar */}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 pt-1 border-t border-[#0e441c] text-center">
-            <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-              <div className="text-[10px] text-slate-300 font-bold">SCORE</div>
-              <div className="text-sm sm:text-base font-black text-[#86efac]">{score.toLocaleString()}</div>
-            </div>
-            <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-              <div className="text-[10px] text-slate-300 font-bold">LEVEL</div>
-              <div className="text-sm sm:text-base font-black text-[#86efac]">{currentLevelIdx + 1}</div>
-            </div>
-            <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-              <div className="text-[10px] text-slate-300 font-bold">LIVES</div>
-              <div className="text-sm sm:text-base font-black text-[#86efac] flex items-center justify-center gap-1">
-                <span>{lives}</span>
-                <Heart className="w-3 h-3 fill-rose-500 text-rose-500 inline" />
-              </div>
-            </div>
-            {engineRef.current.nainsJuggled > 0 ? (
-              <div className="bg-[#451a03] px-2 py-1 rounded-lg border border-amber-500/40 animate-pulse">
-                <div className="text-[10px] text-amber-300 font-bold">JUGGLES</div>
-                <div className="text-sm sm:text-base font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
-              </div>
-            ) : (
-              <div className="hidden sm:block bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-                <div className="text-[10px] text-slate-300 font-bold">HIGH SCORE</div>
-                <div className="text-sm sm:text-base font-black text-amber-300">{topScore.toLocaleString()}</div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  {gameState === 'playing' ? (
+                    <button
+                      onClick={() => { setGameState('paused'); stopMusic(); }}
+                      className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white rounded-lg border border-[#166534] transition flex items-center justify-center cursor-pointer"
+                      title="Pause Game (P)"
+                    >
+                      <Pause className="w-3.5 h-3.5" />
+                    </button>
+                  ) : gameState === 'paused' ? (
+                    <button
+                      onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
+                      className="p-1.5 bg-[#22c55e] text-black font-extrabold rounded-lg transition flex items-center justify-center cursor-pointer"
+                      title="Resume Game (P)"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-current" />
+                    </button>
+                  ) : null}
+
+                  <button
+                    onClick={() => {
+                      const newSound = !options.soundEnabled;
+                      saveOptions({ ...options, soundEnabled: newSound });
+                    }}
+                    className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white rounded-lg border border-[#166534] transition flex items-center justify-center cursor-pointer"
+                    title="Toggle Sound"
+                  >
+                    {options.soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[#4ade80]" /> : <VolumeX className="w-3.5 h-3.5 text-rose-400" />}
+                  </button>
+
+                  <button
+                    onClick={toggleFullscreen}
+                    className="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg border border-amber-500/50 transition flex items-center justify-center gap-1 font-extrabold cursor-pointer text-xs"
+                    title="Exit Fullscreen (F)"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5 text-amber-300" />
+                    <span className="hidden sm:inline">Exit Full (F)</span>
+                  </button>
+                </div>
               </div>
             )}
-          </div>
-        </div>
-        
-        {/* Authentic Jardinains Cabinet Layout (Black Playfield Left + Forest Green Sidebar Right) */}
-        <div className="w-full bg-[#031c09] p-1.5 sm:p-2.5 md:p-3 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col lg:flex-row gap-2 sm:gap-3 items-stretch relative">
-          
-          {/* LEFT: Authentic Black Gameplay Canvas Frame */}
-          <div className="relative flex-1 bg-black rounded-lg sm:rounded-xl border border-slate-700/80 sm:border-2 sm:border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] w-full max-h-[65vh] sm:max-h-[72vh] lg:max-h-none flex items-center justify-center touch-none">
             
             {/* Main Menu Overlay */}
             {gameState === 'menu' && (
@@ -856,6 +948,33 @@ export default function App() {
                   </p>
 
                   <div className="w-full max-w-xs space-y-2 sm:space-y-2.5 font-['Sniglet']">
+                    {/* Full Screen Suggestion Tip for Better Gameplay */}
+                    {!isFullscreen && !dismissFullscreenTip && (
+                      <div className="p-2 sm:p-2.5 bg-gradient-to-r from-emerald-950/90 via-[#063311] to-emerald-950/90 border border-emerald-500/50 rounded-xl flex items-center justify-between text-xs text-emerald-200 shadow-md animate-fade-in">
+                        <div className="flex items-center gap-1.5 min-w-0 pr-1">
+                          <Sparkles className="w-4 h-4 text-amber-300 shrink-0 animate-pulse" />
+                          <span className="text-[11px] sm:text-xs leading-tight font-medium">
+                            Tip: Play in <b>Full Screen</b> for the best arcade experience!
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={toggleFullscreen}
+                            className="px-2 py-1 bg-[#22c55e] hover:bg-[#4ade80] text-black font-extrabold text-[11px] rounded-lg transition cursor-pointer flex items-center gap-1 shadow"
+                          >
+                            <Maximize2 className="w-3 h-3" /> Go Full
+                          </button>
+                          <button
+                            onClick={() => setDismissFullscreenTip(true)}
+                            className="p-1 text-slate-400 hover:text-white transition cursor-pointer rounded"
+                            title="Dismiss Tip"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <button 
                       onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
                       className="w-full py-2.5 sm:py-3 bg-gradient-to-b from-[#4ade80] to-[#16a34a] hover:from-[#86efac] hover:to-[#22c55e] text-black font-extrabold text-base sm:text-lg rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.5)] transition-all flex items-center justify-center gap-2 border-2 border-[#14532d] active:translate-y-0.5 tracking-wider cursor-pointer"
@@ -895,10 +1014,11 @@ export default function App() {
                   </div>
 
                   {/* Controls legend */}
-                  <div className="mt-3 pt-2 sm:mt-4 sm:pt-3 border-t border-[#14532d] text-[10px] sm:text-[11px] text-emerald-300/70 font-mono flex items-center justify-around w-full">
-                    <span>🖱️ Drag: Mouse / Touch</span>
-                    <span>🚀 Launch: Tap / Space</span>
-                    <span>⏸️ Pause: P / Esc</span>
+                  <div className="mt-3 pt-2 sm:mt-4 sm:pt-3 border-t border-[#14532d] text-[10px] sm:text-[11px] text-emerald-300/70 font-mono flex items-center justify-around w-full flex-wrap gap-y-1">
+                    <span>🖱️ Drag: Mouse/Touch</span>
+                    <span>🚀 Launch: Click/Space</span>
+                    <span>⏸️ Pause: P/Esc</span>
+                    <span>🖥️ Fullscreen: F</span>
                   </div>
                 </div>
               </div>
@@ -1000,168 +1120,182 @@ export default function App() {
             />
           </div>
 
-          {/* RIGHT: Authentic Jardinains Forest Green Sidebar (Visible on Desktop lg:) */}
-          <aside className="hidden lg:flex w-56 lg:w-60 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
-            
-            {/* Top: Title & Dedication */}
-            <div className="flex flex-col items-center">
-              <h1 
-                onClick={() => setGameState('menu')}
-                className="text-3xl lg:text-4xl font-extrabold text-[#4ade80] drop-shadow-[0_2px_0_#000] tracking-wide cursor-pointer hover:scale-105 transition-transform"
-                title="Return to Menu"
-              >
-                Jardinains!
-              </h1>
+          {/* RIGHT: Authentic Jardinains Forest Green Sidebar (Visible on Desktop lg: when NOT in fullscreen) */}
+          {!isFullscreen && (
+            <aside className="hidden lg:flex w-56 lg:w-60 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
+              
+              {/* Top: Title & Dedication */}
+              <div className="flex flex-col items-center">
+                <h1 
+                  onClick={() => setGameState('menu')}
+                  className="text-3xl lg:text-4xl font-extrabold text-[#4ade80] drop-shadow-[0_2px_0_#000] tracking-wide cursor-pointer hover:scale-105 transition-transform"
+                  title="Return to Menu"
+                >
+                  Jardinains!
+                </h1>
 
-              {/* with love for yesra right under Jardinains */}
-              <div className="text-center text-xs font-bold text-rose-300 flex items-center justify-center gap-1 mt-0.5 mb-2 tracking-wide">
-                <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse inline-block" />
-                <span>with love for yesra</span>
-              </div>
-
-              {/* Score */}
-              <div className="w-full flex flex-col items-center mt-1">
-                <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Score:
+                {/* with love for yesra right under Jardinains */}
+                <div className="text-center text-xs font-bold text-rose-300 flex items-center justify-center gap-1 mt-0.5 mb-2 tracking-wide">
+                  <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse inline-block" />
+                  <span>with love for yesra</span>
                 </div>
-                <div className="text-2xl lg:text-3xl font-black text-[#86efac] tracking-wider drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
-                  {score.toLocaleString()}
+
+                {/* Score */}
+                <div className="w-full flex flex-col items-center mt-1">
+                  <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                    Score:
+                  </div>
+                  <div className="text-2xl lg:text-3xl font-black text-[#86efac] tracking-wider drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
+                    {score.toLocaleString()}
+                  </div>
                 </div>
-              </div>
 
-              {/* Level */}
-              <div className="w-full flex flex-col items-center mt-3">
-                <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Level:
+                {/* Level */}
+                <div className="w-full flex flex-col items-center mt-3">
+                  <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                    Level:
+                  </div>
+                  <div className="text-2xl lg:text-3xl font-black text-[#86efac] drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
+                    {currentLevelIdx + 1}
+                  </div>
                 </div>
-                <div className="text-2xl lg:text-3xl font-black text-[#86efac] drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
-                  {currentLevelIdx + 1}
+
+                {/* Lives */}
+                <div className="w-full flex flex-col items-center mt-3">
+                  <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                    Lives:
+                  </div>
+                  <div className="text-2xl lg:text-3xl font-black text-[#86efac] drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
+                    {lives}
+                  </div>
                 </div>
-              </div>
 
-              {/* Lives */}
-              <div className="w-full flex flex-col items-center mt-3">
-                <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
-                  Lives:
-                </div>
-                <div className="text-2xl lg:text-3xl font-black text-[#86efac] drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
-                  {lives}
-                </div>
-              </div>
-
-              {/* Nain Juggles Combo (if active) */}
-              {engineRef.current.nainsJuggled > 0 && (
-                <div className="w-full flex flex-col items-center mt-2 animate-bounce">
-                  <div className="text-xs text-amber-300 font-bold">Juggles:</div>
-                  <div className="text-lg font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
-                </div>
-              )}
-            </div>
-
-            {/* Middle: High Scores Records (from Screenshot 2) */}
-            <div className="my-4 space-y-2.5 text-center border-t border-[#0e441c] pt-3">
-              <div>
-                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Your Highest Score</div>
-                <div className="text-sm font-bold text-[#86efac]">{userHighScore.toLocaleString()}</div>
-              </div>
-
-              <div>
-                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Your Highest Level</div>
-                <div className="text-sm font-bold text-[#86efac]">{userHighestLevel}</div>
-              </div>
-
-              <div>
-                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Highest Score</div>
-                <div className="text-xs text-rose-300 font-bold">yesra</div>
-                <div className="text-sm font-bold text-[#86efac]">{topScore.toLocaleString()}</div>
-              </div>
-
-              <div>
-                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Highest Level</div>
-                <div className="text-xs text-rose-300 font-bold">yesra</div>
-                <div className="text-sm font-bold text-[#86efac]">{topLevel}</div>
-              </div>
-            </div>
-
-            {/* Bottom: Quick In-Game Controls & Magic Chopstick Games watermark */}
-            <div className="flex flex-col gap-2 pt-2 border-t border-[#0e441c]">
-              <div className="grid grid-cols-2 gap-1.5">
-                {gameState === 'playing' ? (
-                  <button 
-                    onClick={() => { setGameState('paused'); stopMusic(); }}
-                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
-                    title="Pause Game"
-                  >
-                    <Pause className="w-3 h-3" /> Pause
-                  </button>
-                ) : gameState === 'paused' ? (
-                  <button 
-                    onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
-                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Play className="w-3 h-3 fill-current" /> Resume
-                  </button>
-                ) : (
-                  <button 
-                    onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
-                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1 cursor-pointer"
-                  >
-                    <Play className="w-3 h-3 fill-current" /> Play
-                  </button>
+                {/* Nain Juggles Combo (if active) */}
+                {engineRef.current.nainsJuggled > 0 && (
+                  <div className="w-full flex flex-col items-center mt-2 animate-bounce">
+                    <div className="text-xs text-amber-300 font-bold">Juggles:</div>
+                    <div className="text-lg font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
+                  </div>
                 )}
+              </div>
+
+              {/* Middle: High Scores Records (from Screenshot 2) */}
+              <div className="my-4 space-y-2.5 text-center border-t border-[#0e441c] pt-3">
+                <div>
+                  <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Your Highest Score</div>
+                  <div className="text-sm font-bold text-[#86efac]">{userHighScore.toLocaleString()}</div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Your Highest Level</div>
+                  <div className="text-sm font-bold text-[#86efac]">{userHighestLevel}</div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Highest Score</div>
+                  <div className="text-xs text-rose-300 font-bold">yesra</div>
+                  <div className="text-sm font-bold text-[#86efac]">{topScore.toLocaleString()}</div>
+                </div>
+
+                <div>
+                  <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Highest Level</div>
+                  <div className="text-xs text-rose-300 font-bold">yesra</div>
+                  <div className="text-sm font-bold text-[#86efac]">{topLevel}</div>
+                </div>
+              </div>
+
+              {/* Bottom: Quick In-Game Controls */}
+              <div className="flex flex-col gap-2 pt-2 border-t border-[#0e441c]">
+                <div className="grid grid-cols-2 gap-1.5">
+                  {gameState === 'playing' ? (
+                    <button 
+                      onClick={() => { setGameState('paused'); stopMusic(); }}
+                      className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
+                      title="Pause Game"
+                    >
+                      <Pause className="w-3 h-3" /> Pause
+                    </button>
+                  ) : gameState === 'paused' ? (
+                    <button 
+                      onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
+                      className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Play className="w-3 h-3 fill-current" /> Resume
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
+                      className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <Play className="w-3 h-3 fill-current" /> Play
+                    </button>
+                  )}
+
+                  <button 
+                    onClick={() => {
+                      const newSound = !options.soundEnabled;
+                      saveOptions({ ...options, soundEnabled: newSound });
+                    }}
+                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
+                    title="Toggle Sound"
+                  >
+                    {options.soundEnabled ? <Volume2 className="w-3 h-3 text-[#4ade80]" /> : <VolumeX className="w-3 h-3 text-rose-400" />}
+                    <span>{options.soundEnabled ? 'Sound' : 'Mute'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button 
+                    onClick={() => setShowLevelSelect(true)}
+                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Grid className="w-3 h-3" /> Levels
+                  </button>
+                  <button 
+                    onClick={() => setShowOptions(true)}
+                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    <Settings className="w-3 h-3" /> Options
+                  </button>
+                </div>
 
                 <button 
-                  onClick={() => {
-                    const newSound = !options.soundEnabled;
-                    saveOptions({ ...options, soundEnabled: newSound });
-                  }}
-                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
-                  title="Toggle Sound"
+                  onClick={toggleFullscreen}
+                  className="w-full py-1.5 px-2 bg-[#04280e] hover:bg-[#063914] text-amber-300 hover:text-amber-200 text-xs font-bold rounded-lg border border-amber-500/30 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                  title={isFullscreen ? "Exit Fullscreen (F)" : "Enter Fullscreen (F)"}
                 >
-                  {options.soundEnabled ? <Volume2 className="w-3 h-3 text-[#4ade80]" /> : <VolumeX className="w-3 h-3 text-rose-400" />}
-                  <span>{options.soundEnabled ? 'Sound' : 'Mute'}</span>
+                  {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-amber-400" />}
+                  <span>{isFullscreen ? "Exit Fullscreen (F)" : "Play Full Screen (F)"}</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-1.5">
-                <button 
-                  onClick={() => setShowLevelSelect(true)}
-                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Grid className="w-3 h-3" /> Levels
-                </button>
-                <button 
-                  onClick={() => setShowOptions(true)}
-                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <Settings className="w-3 h-3" /> Options
-                </button>
-              </div>
-
-              {/* Classic watermark as seen in original Jardinains screenshot 2 */}
-              <div className="text-center text-[10px] text-[#15803d]/70 font-mono pt-1">
-                www.magicchopstick.com
-              </div>
-            </div>
-
-          </aside>
+            </aside>
+          )}
         </div>
 
         {/* Small bottom bar */}
-        <footer className="w-full text-center text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2 px-2 pt-2 pb-1">
-          <button onClick={() => setShowAbout(true)} className="hover:text-emerald-400 transition flex items-center gap-1 cursor-pointer">
-            <Info className="w-3.5 h-3.5" /> About Jardinains Remake
-          </button>
-          <span className="font-['Sniglet'] text-rose-400/90 flex items-center gap-1 font-semibold">
-            <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse" /> with love for yesra
-          </span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setShowScores(true)} className="hover:text-amber-400 transition flex items-center gap-1 cursor-pointer font-bold">
-              <Trophy className="w-3.5 h-3.5 text-amber-400" /> High Scores
-            </button>
-            <span className="font-mono text-[11px] text-slate-500 hidden sm:inline">• 1,000 Levels</span>
-          </div>
-        </footer>
+        {!isFullscreen && (
+          <footer className="w-full text-center text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2 px-2 pt-2 pb-1">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setShowAbout(true)} className="hover:text-emerald-400 transition flex items-center gap-1 cursor-pointer">
+                <Info className="w-3.5 h-3.5" /> About Jardinains Remake
+              </button>
+              <button onClick={toggleFullscreen} className="hover:text-amber-300 transition flex items-center gap-1 cursor-pointer text-slate-300">
+                {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-amber-400" />}
+                <span>{isFullscreen ? "Exit Full Screen" : "Full Screen (F)"}</span>
+              </button>
+            </div>
+            <span className="font-['Sniglet'] text-rose-400/90 flex items-center gap-1 font-semibold">
+              <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse" /> with love for yesra
+            </span>
+            <div className="flex items-center gap-2">
+              <button onClick={() => setShowScores(true)} className="hover:text-amber-400 transition flex items-center gap-1 cursor-pointer font-bold">
+                <Trophy className="w-3.5 h-3.5 text-amber-400" /> High Scores
+              </button>
+              <span className="font-mono text-[11px] text-slate-500 hidden sm:inline">• 1,000 Levels</span>
+            </div>
+          </footer>
+        )}
 
       </div>
 

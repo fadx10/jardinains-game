@@ -106,16 +106,6 @@
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
     <div id="root"></div>
-    <link rel="stylesheet" href="./assets/index.css" />
-    <!-- Production Compiled Application Bundle -->
-    <script type="module" src="./assets/app.js"></script>
-    <!-- Dev Mode Loader for Local Vite Dev Server -->
-    <script type="module">
-      if (typeof window !== 'undefined' && (window.location.port === '3000' || window.location.hostname === 'localhost')) {
-        try {
-          import('./src/main.tsx');
-        } catch (e) {}
-      }
-    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

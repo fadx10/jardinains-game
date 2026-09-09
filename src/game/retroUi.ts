@@ -2,7 +2,7 @@ import { Brick, Ball } from './types';
 
 /**
  * Authentic Retro Arcade Renderer for Jardinains!
- * Recreating the classic 2001 Magic Chopstick Games aesthetic:
+ * Recreating the classic arcade aesthetic:
  * - 3D beveled bricks with specular sheen & progressive crack damage
  * - Unbreakable steel plating with rivets and hazard grip ridges
  * - Red & Silver curved metallic arcade paddle with specular highlight glare

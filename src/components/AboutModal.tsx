@@ -53,7 +53,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
               <span>The Classic 'Nain-Bouncing Legacy</span>
             </div>
             <p>
-              Originally envisioned by <strong>Magic Chopstick Games</strong> in 2001, <em>Jardinains!</em> captured the hearts of arcade fans worldwide with its cheeky garden gnomes ('nains) who taunt players, lob rocks, and can be bounced on your paddle for outrageous combo multipliers.
+              Originally created in 2001, <em>Jardinains!</em> captured the hearts of arcade fans worldwide with its cheeky garden gnomes ('nains) who taunt players, lob rocks, and can be bounced on your paddle for outrageous combo multipliers.
             </p>
             <p>
               This enhanced remake honors the original classic with:
