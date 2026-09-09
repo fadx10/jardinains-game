@@ -112,17 +112,17 @@
         var isDev = host === 'localhost' || 
                     host === '127.0.0.1' || 
                     window.location.port === '3000' ||
-                    host.indexOf('ais-dev-') !== -1;
+                    host.indexOf('ais-dev-') !== -1 ||
+                    host.indexOf('ais-pre-') !== -1;
         
         if (!isDev) {
-          // Check if this is the uncompiled root index.html containing raw TypeScript references
-          var hasRawTypeScript = !!document.querySelector('script[src="/src/main.tsx"]');
-          if (hasRawTypeScript) {
-            // Determine the subfolder pathname
-            var pathname = window.location.pathname;
-            var baseDir = pathname.endsWith('/') ? pathname : pathname.substring(0, pathname.lastIndexOf('/') + 1);
-            // Redirect cleanly to the single-file production index.html inside the dist folder
-            window.location.replace(baseDir + 'dist/index.html');
+          var pathname = window.location.pathname;
+          // If we are on public hosting and not already in /dist/, redirect to dist/index.html
+          if (pathname.indexOf('/dist/') === -1) {
+            var lastSlash = pathname.lastIndexOf('/');
+            var baseDir = lastSlash !== -1 ? pathname.substring(0, lastSlash + 1) : '/';
+            if (!baseDir.endsWith('/')) baseDir += '/';
+            window.location.replace(baseDir + 'dist/index.html' + window.location.search + window.location.hash);
           }
         }
       })();

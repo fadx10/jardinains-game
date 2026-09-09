@@ -1,8 +1,12 @@
 # ----------------------------------------------------------------------
-# Jardinains! 1000 Level Arcade - Hostinger Apache / Shared Hosting Config
+# Jardinains! 1000 Level Arcade - Universal Shared Web Hosting Configuration
+# Compatible with cPanel, Hostinger, Apache 2.4+, LiteSpeed, and WordPress
 # ----------------------------------------------------------------------
 
-# 1. Set correct MIME Types for JavaScript Modules, CSS, and Game Assets
+# 1. Prioritize index.php (the high-performance production streamer)
+DirectoryIndex index.php dist/index.html index.html
+
+# 2. MIME Types (Crucial for ES Modules, Audio, Fonts, and JSON)
 <IfModule mod_mime.c>
   AddType application/javascript .js .mjs
   AddType text/css .css
@@ -10,6 +14,7 @@
   AddType image/x-icon .ico
   AddType application/wasm .wasm
   AddType application/json .json
+  AddType application/manifest+json .json .webmanifest
   AddType audio/mpeg .mp3
   AddType audio/wav .wav
   AddType audio/ogg .ogg
@@ -17,59 +22,43 @@
   AddType font/woff2 .woff2
 </IfModule>
 
-# 2. Directory Index priority (dist/index.html if present, else root index.html)
-DirectoryIndex dist/index.html index.html
-
-# 3. Rewrite rules for Subdirectory hosting (/jardinains/)
+# 3. Rewrite Rules
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /jardinains/
 
-  # Ensure trailing slash for directory requests so relative links work properly
+  # Ensure trailing slash on directory requests
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteCond %{REQUEST_URI} !(.*)/$
-  RewriteRule ^(.*)$ /jardinains/$1/ [L,R=301]
+  RewriteRule ^(.*)$ $1/ [L,R=301]
 
-  # Allow direct access to existing files and directories
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
+  # If requesting the root or index.html directly, route to index.php or dist/index.html
+  RewriteRule ^$ index.php [L]
+  RewriteRule ^index\.html$ index.php [L]
+
+  # Serve existing static assets directly (svg, png, json, ico, css, js)
+  RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # If dist/index.html exists on disk, route requests there
-  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/index.html -f
-  RewriteRule ^$ dist/index.html [L]
+  # If requesting files inside /dist/, allow direct access
+  RewriteCond %{REQUEST_URI} ^.*/dist/.*$
+  RewriteRule ^ - [L]
 
-  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/index.html -f
-  RewriteRule ^index\.html$ dist/index.html [L]
-
-  # If dist/assets/ exists on disk, route assets requests there
-  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/assets/$1 -f
-  RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
-
-  # SPA Fallback when dist/index.html exists
-  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/index.html -f
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . dist/index.html [L]
-
-  # Fallback to root index.html if dist/ is not yet deployed
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . index.html [L]
+  # Catch-all: Route any other path to index.php
+  RewriteRule . index.php [L]
 </IfModule>
 
-# 4. Security & Caching Headers
+# 4. Security & CORS Headers
 <IfModule mod_headers.c>
-  # Enforce strict MIME checking safely
   Header set X-Content-Type-Options "nosniff"
-
-  # Cache compiled JS and CSS assets safely
-  <FilesMatch "\.(js|css|wasm|woff2|png|jpg|svg)$">
-    Header set Cache-Control "max-age=31536000, public, immutable"
-  </FilesMatch>
-
-  # Do not cache HTML to ensure instant updates
-  <FilesMatch "\.(html)$">
+  Header set Access-Control-Allow-Origin "*"
+  
+  # Ensure HTML and PHP are never cached so updates apply immediately
+  <FilesMatch "\.(html|php)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
   </FilesMatch>
 </IfModule>
+
+# 5. Disable directory browsing for security
+Options -Indexes

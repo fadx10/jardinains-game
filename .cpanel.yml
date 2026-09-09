@@ -4,3 +4,6 @@ deployment:
     - export DEPLOYPATH=${DEPLOYPATH:-$PWD/../public_html/jardinains/}
     - /bin/mkdir -p $DEPLOYPATH
     - /bin/cp -R dist/* $DEPLOYPATH/
+    - /bin/cp -f dist/.htaccess $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp -f index.php $DEPLOYPATH/ 2>/dev/null || true
+    - /bin/cp -f .htaccess $DEPLOYPATH/.htaccess.root 2>/dev/null || true
