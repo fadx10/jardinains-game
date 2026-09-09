@@ -27,7 +27,7 @@ jobs:
         run: |
           npm run build
           mkdir -p build_output
-          cp index.html build_output/
+          cp dist/index.html build_output/index.html
           cp -r public/* build_output/ 2>/dev/null || true
           cp .htaccess build_output/ 2>/dev/null || true
 

@@ -3,6 +3,6 @@ deployment:
   tasks:
     - export DEPLOYPATH=${DEPLOYPATH:-$PWD/../public_html/jardinains/}
     - /bin/mkdir -p $DEPLOYPATH
-    - /bin/cp -f index.html $DEPLOYPATH/
+    - /bin/cp -f dist/index.html $DEPLOYPATH/index.html
     - /bin/cp -f .htaccess $DEPLOYPATH/ 2>/dev/null || true
     - /bin/cp -Rf public/* $DEPLOYPATH/ 2>/dev/null || true

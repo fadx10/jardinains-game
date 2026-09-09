@@ -1,0 +1,55 @@
+# ----------------------------------------------------------------------
+# Jardinains! 1000 Level Arcade - Universal Shared Web Hosting Configuration
+# Compatible with cPanel, Hostinger, Apache 2.4+, LiteSpeed, and WordPress
+# ----------------------------------------------------------------------
+
+# 1. Prioritize index.html inside dist
+DirectoryIndex index.html index.php
+
+# 2. MIME Types (Crucial for ES Modules, Audio, Fonts, and JSON)
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType image/x-icon .ico
+  AddType application/wasm .wasm
+  AddType application/json .json
+  AddType application/manifest+json .json .webmanifest
+  AddType audio/mpeg .mp3
+  AddType audio/wav .wav
+  AddType audio/ogg .ogg
+  AddType font/woff .woff
+  AddType font/woff2 .woff2
+</IfModule>
+
+# 3. Rewrite Rules
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Ensure trailing slash on directory requests
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_URI} !(.*)/$
+  RewriteRule ^(.*)$ $1/ [L,R=301]
+
+  # Serve existing files directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # SPA Fallback to index.html
+  RewriteRule . index.html [L]
+</IfModule>
+
+# 4. Security & CORS Headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set Access-Control-Allow-Origin "*"
+  
+  <FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires 0
+  </FilesMatch>
+</IfModule>
+
+Options -Indexes

@@ -15,88 +15,60 @@
                 configurable: true,
                 enumerable: true
               });
-            } catch (err) {
-              // silent fallback
+            } catch (e) {
+              window.fetch = originalFetch;
             }
           }
-        } catch (e) {}
+        } catch (err) {
+          console.warn('Fetch proxy wrapper bypassed or not needed:', err);
+        }
       })();
     </script>
+
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
-    <!-- Favicon & Touch Icons -->
+    <!-- SEO and Social Meta Tags -->
+    <title>Jardinains! — Retro Brick Breaker Arcade Game</title>
+    <meta name="description" content="Experience the classic retro brick breaker arcade game with mischievous garden gnomes! Play through endless levels, collect power-ups, and bounce gnomes!" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Jardinains! — Retro Brick Breaker Arcade" />
+    <meta property="og:description" content="Experience the classic retro brick breaker arcade game with mischievous garden gnomes!" />
+    <meta property="og:image" content="./favicon.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="Jardinains! — Retro Brick Breaker Arcade" />
+    <meta property="twitter:description" content="Experience the classic retro brick breaker arcade game with mischievous garden gnomes!" />
+    <meta property="twitter:image" content="./favicon.svg" />
+
+    <!-- App Identity & Favicon -->
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="alternate icon" href="./favicon.svg" />
     <link rel="apple-touch-icon" href="./favicon.svg" />
     <link rel="manifest" href="./manifest.json" />
-
-    <!-- Primary SEO Meta Tags -->
-    <title>Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online</title>
-    <meta name="title" content="Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online" />
-    <meta name="description" content="Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode." />
-    <meta name="keywords" content="Jardinains, play Jardinains online, brick breaker game, classic retro games 2000s, arkanoid online, breakout gnome game, nain bouncing, 1000 levels arcade, free browser game, retro arcade web game" />
-    <meta name="author" content="Jardinains Arcade Remake" />
-    <meta name="application-name" content="Jardinains! 1000 Levels" />
     <meta name="theme-color" content="#020617" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Open Graph / Facebook / WhatsApp -->
-    <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Jardinains! 1000 Levels" />
-    <meta property="og:title" content="Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online" />
-    <meta property="og:description" content="Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode." />
-    <meta property="og:locale" content="en_US" />
+    <!-- PWA iOS Splash Screen Support -->
+    <meta name="apple-mobile-web-app-title" content="Jardinains" />
 
-    <!-- Twitter / X Cards -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online" />
-    <meta name="twitter:description" content="Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode." />
-
-    <!-- Schema.org JSON-LD Structured Data for Search Engines -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": ["VideoGame", "SoftwareApplication", "WebApplication"],
-          "name": "Jardinains! 1000 Levels - The Classic Brick-Breaking Remake",
-          "alternateName": "Jardinains Online",
-          "headline": "Play Classic Jardinains! 1000 Level Brick Breaker Online Free",
-          "description": "The classic 2000s brick-breaking, nain-bouncing arcade game featuring 1,000 levels, authentic retro Web Audio synthesizer, mischievous garden gnomes, power-ups, and full-screen support.",
-          "applicationCategory": "GameApplication",
-          "gamePlatform": ["Web Browser", "PC", "Mobile", "Tablet"],
-          "operatingSystem": "Any (Web Browser)",
-          "genre": ["Arcade Game", "Brick Breaker", "Retro Game", "Physics Game"],
-          "playMode": "SinglePlayer",
-          "inLanguage": "en",
-          "isAccessibleForFree": true,
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD",
-            "availability": "https://schema.org/InStock"
-          },
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": "4.9",
-            "ratingCount": "1280",
-            "bestRating": "5",
-            "worstRating": "1"
-          },
-          "author": {
-            "@type": "Organization",
-            "name": "Jardinains! Remake Studio"
+    <!-- Anti-Clickjacking Frame Safeguard -->
+    <script>
+    if (window.self !== window.top) {
+      try {
+        // We are in an iframe (e.g. AI Studio preview). Ensure normal event loops and frame sizing.
+        window.addEventListener('message', function(e) {
+          if (e.data && e.data.type === 'PING') {
+            window.parent.postMessage({ type: 'PONG' }, '*');
           }
-        },
-        {
-          "@type": "WebSite",
-          "name": "Jardinains! 1000 Levels",
-          "description": "Play the legendary Jardinains! classic brick-breaking arcade game with 1000 levels online in your web browser.",
-          "inLanguage": "en"
-        }
-      ]
+        });
+      } catch (e) {
+        console.warn('Sandbox restrictions applied');
+      }
     }
     </script>
 

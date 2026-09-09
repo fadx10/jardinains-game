@@ -66,17 +66,11 @@ function aistudioMediaPlugin(): Plugin {
 // LINT.ThenChange(//depot/google3/java/com/google/alkali/boq/makersuite/applet_dev_service/templates/initializers/react_theme/vite.config.ts:aistudio_media_plugin)
 
 export default defineConfig(() => {
-  const devHtmlPath = path.resolve(__dirname, 'index.dev.html');
-  const rootHtmlPath = path.resolve(__dirname, 'index.html');
-  if (fs.existsSync(devHtmlPath)) {
-    fs.copyFileSync(devHtmlPath, rootHtmlPath);
-  }
-
   return {
     base: './',
     build: {
-      outDir: '.',
-      emptyOutDir: false,
+      outDir: 'dist',
+      emptyOutDir: true,
       rollupOptions: {
         input: {
           index: path.resolve(__dirname, 'index.html'),
