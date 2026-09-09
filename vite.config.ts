@@ -96,6 +96,9 @@ export default defineConfig(() => {
           if (fs.existsSync(distHtmlPath)) {
             let html = fs.readFileSync(distHtmlPath, 'utf8');
             html = html.replace(/type="module"\s*crossorigin/g, '');
+            html = html.replace(/crossorigin\s*type="module"/g, '');
+            html = html.replace(/type="module"/g, '');
+            html = html.replace(/<script\s+>/g, '<script>');
             fs.writeFileSync(distHtmlPath, html);
           }
         }
