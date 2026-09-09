@@ -5,6 +5,7 @@ import { LEVELS, TOTAL_LEVELS, getLevelName } from './game/levels';
 import { playSound, startMusic, stopMusic, setSoundMuted, setMusicEnabled, setSoundVolume, setMusicVolume } from './game/audio';
 import { updateJardinains, drawJardinain, drawProjectile, createParachutingNain, NAIN_WIDTH, NAIN_HEIGHT } from './game/nain';
 import { applyPowerUpPickup, tickActivePowerUps, drawPowerUp, getBallSpeedMultiplier, POWERUP_CONFIGS, createPowerUp } from './game/powerups';
+import { drawArcadeBorder, drawClassicBeveledBrick, drawClassicPaddle, drawClassicBall, drawClassicShield } from './game/retroUi';
 
 // Modals
 import AboutModal from './components/AboutModal';
@@ -197,7 +198,7 @@ export default function App() {
     const rect = canvas.getBoundingClientRect();
     const scaleX = CANVAS_WIDTH / rect.width;
     const x = (e.clientX - rect.left) * scaleX;
-    engineRef.current.paddleX = Math.max(0, Math.min(CANVAS_WIDTH - engineRef.current.paddleWidth, x - engineRef.current.paddleWidth / 2));
+    engineRef.current.paddleX = Math.max(12, Math.min(CANVAS_WIDTH - 12 - engineRef.current.paddleWidth, x - engineRef.current.paddleWidth / 2));
   };
 
   const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -207,7 +208,7 @@ export default function App() {
     const rect = canvas.getBoundingClientRect();
     const scaleX = CANVAS_WIDTH / rect.width;
     const x = (e.touches[0].clientX - rect.left) * scaleX;
-    engineRef.current.paddleX = Math.max(0, Math.min(CANVAS_WIDTH - engineRef.current.paddleWidth, x - engineRef.current.paddleWidth / 2));
+    engineRef.current.paddleX = Math.max(12, Math.min(CANVAS_WIDTH - 12 - engineRef.current.paddleWidth, x - engineRef.current.paddleWidth / 2));
   };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -217,7 +218,7 @@ export default function App() {
       const rect = canvas.getBoundingClientRect();
       const scaleX = CANVAS_WIDTH / rect.width;
       const x = (e.touches[0].clientX - rect.left) * scaleX;
-      engineRef.current.paddleX = Math.max(0, Math.min(CANVAS_WIDTH - engineRef.current.paddleWidth, x - engineRef.current.paddleWidth / 2));
+      engineRef.current.paddleX = Math.max(12, Math.min(CANVAS_WIDTH - 12 - engineRef.current.paddleWidth, x - engineRef.current.paddleWidth / 2));
     }
     handleMouseDown();
   };
@@ -312,7 +313,7 @@ export default function App() {
     // Paddle movement via keys
     if (engine.keys['ArrowLeft'] || engine.keys['KeyA']) engine.paddleX -= 8;
     if (engine.keys['ArrowRight'] || engine.keys['KeyD']) engine.paddleX += 8;
-    engine.paddleX = Math.max(0, Math.min(CANVAS_WIDTH - engine.paddleWidth, engine.paddleX));
+    engine.paddleX = Math.max(12, Math.min(CANVAS_WIDTH - 12 - engine.paddleWidth, engine.paddleX));
 
     // Powerups tick
     const activeList = tickActivePowerUps(engine.activeTimers, dt, engine);
@@ -362,10 +363,23 @@ export default function App() {
       b.x += b.vx * speedMult;
       b.y += b.vy * speedMult;
 
-      // Walls
-      if (b.x - b.radius < 0) { b.x = b.radius; b.vx = -b.vx; playSound('wall'); }
-      if (b.x + b.radius > CANVAS_WIDTH) { b.x = CANVAS_WIDTH - b.radius; b.vx = -b.vx; playSound('wall'); }
-      if (b.y - b.radius < 0) { b.y = b.radius; b.vy = -b.vy; playSound('wall'); }
+      // Walls (12px stone arcade border)
+      const wallThickness = 12;
+      if (b.x - b.radius < wallThickness) {
+        b.x = wallThickness + b.radius;
+        b.vx = Math.abs(b.vx);
+        playSound('wall');
+      }
+      if (b.x + b.radius > CANVAS_WIDTH - wallThickness) {
+        b.x = CANVAS_WIDTH - wallThickness - b.radius;
+        b.vx = -Math.abs(b.vx);
+        playSound('wall');
+      }
+      if (b.y - b.radius < wallThickness) {
+        b.y = wallThickness + b.radius;
+        b.vy = Math.abs(b.vy);
+        playSound('wall');
+      }
 
       // Bottom
       if (b.y + b.radius > CANVAS_HEIGHT) {
@@ -595,52 +609,57 @@ export default function App() {
     const engine = engineRef.current;
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Background
-    ctx.fillStyle = '#0f172a';
+    // 1. Classic Retro Deep Slate & Garden Night Sky Background
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
+    bgGrad.addColorStop(0, '#090d16');
+    bgGrad.addColorStop(0.5, '#0c1527');
+    bgGrad.addColorStop(1, '#060a12');
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Shield
-    if (engine.shieldActive) {
-      ctx.fillStyle = 'rgba(20, 184, 166, 0.3)';
-      ctx.fillRect(0, CANVAS_HEIGHT - 10, CANVAS_WIDTH, 10);
+    // Subtle twinkling stars in the sky
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    for (let s = 0; s < 30; s++) {
+      const sx = ((s * 41 + 17) % (CANVAS_WIDTH - 30)) + 15;
+      const sy = ((s * 31 + 23) % (CANVAS_HEIGHT - 30)) + 15;
+      ctx.fillRect(sx, sy, 2, 2);
     }
 
-    // Bricks
-    engine.bricks.forEach(b => {
-      ctx.fillStyle = b.color;
-      ctx.fillRect(b.x, b.y, b.w, b.h);
-      ctx.strokeStyle = '#000';
-      ctx.strokeRect(b.x, b.y, b.w, b.h);
-      if (b.hp > 1 && !b.unbreakable) {
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(b.x + 2, b.y + 2, b.w - 4, b.h - 4);
-      }
-    });
+    // 2. Stone/Brick Arcade Border Walls (Original Jardinains classic frame)
+    drawArcadeBorder(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, 12);
 
-    // Paddle
-    ctx.fillStyle = engine.stickyBall ? '#a78bfa' : '#3b82f6';
-    ctx.beginPath();
-    ctx.roundRect(engine.paddleX, PADDLE_Y, engine.paddleWidth, PADDLE_HEIGHT, 8);
-    ctx.fill();
+    // 3. Bottom Shield / Energetic Forcefield Barrier
+    if (engine.shieldActive) {
+      drawClassicShield(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, performance.now());
+    }
 
-    // Balls
-    engine.balls.forEach(b => {
-      ctx.fillStyle = b.isFireball ? '#ef4444' : '#ffffff';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
-      ctx.fill();
-    });
+    // 4. Authentic 3D Beveled Bricks (with specular sheen & crack damage)
+    engine.bricks.forEach(b => drawClassicBeveledBrick(ctx, b));
 
-    // Powerups
+    // 5. Classic Red & Silver Metallic Arcade Paddle (with laser barrels / sticky slime)
+    drawClassicPaddle(
+      ctx,
+      engine.paddleX,
+      PADDLE_Y,
+      engine.paddleWidth,
+      PADDLE_HEIGHT,
+      engine.stickyBall,
+      engine.laserActiveTime > 0
+    );
+
+    // 6. 3D Chrome Spherical Balls & Fireball particles
+    engine.balls.forEach(b => drawClassicBall(ctx, b));
+
+    // 7. Powerups
     engine.powerups.forEach(p => drawPowerUp(ctx, p));
 
-    // Nains
+    // 8. Mischievous Jardinains (Authentic animated gnomes)
     engine.nains.forEach(n => drawJardinain(ctx, n));
 
-    // Projectiles
+    // 9. Projectiles (Lasers & Nain rocks)
     engine.projectiles.forEach(p => drawProjectile(ctx, p));
 
-    // Particles
+    // 10. Particles
     engine.particles.forEach(p => {
       ctx.globalAlpha = p.alpha;
       ctx.fillStyle = p.color;
@@ -650,7 +669,7 @@ export default function App() {
     });
     ctx.globalAlpha = 1;
 
-    // Floating Texts
+    // 11. Floating Texts
     engine.floatingTexts.forEach(ft => {
       ctx.globalAlpha = ft.alpha;
       ctx.fillStyle = ft.color;
@@ -669,25 +688,89 @@ export default function App() {
       {/* Main Game Container */}
       <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col gap-4">
         
-        {/* Header HUD */}
-        <header className="flex items-center justify-between bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-xl">
-          <div className="flex items-center gap-4">
-            <h1 className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 italic font-mono flex items-center gap-2 cursor-pointer" onClick={() => setGameState('menu')}>
-              JARDINAINS!
-            </h1>
-            
-            {gameState !== 'menu' && (
-              <div className="flex gap-3 text-xs font-mono font-bold bg-slate-950/50 px-3 py-1.5 rounded-lg border border-slate-800">
-                <span className="text-slate-400">LVL: <span className="text-white">{currentLevelIdx + 1}</span></span>
-                <span className="text-slate-400">PTS: <span className="text-amber-400">{score}</span></span>
-                <span className="text-slate-400 flex items-center gap-1">
-                  <Heart className="w-3 h-3 text-rose-500 fill-rose-500" /> <span className="text-rose-400">x{lives}</span>
+        {/* Header HUD - Authentic Original Jardinains Arcade Cabinet Frame */}
+        <header className="flex items-center justify-between bg-slate-900/95 backdrop-blur-md p-3 md:p-3.5 rounded-2xl border-2 border-amber-500/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] relative overflow-hidden">
+          {/* Subtle gold trim line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 opacity-80" />
+
+          {/* Left: JARDINAINS! with love for yesra right underneath */}
+          <div 
+            className="flex flex-col cursor-pointer select-none group" 
+            onClick={() => setGameState('menu')} 
+            title="Return to Main Menu"
+          >
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl md:text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-yellow-400 to-amber-500 italic font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                JARDINAINS!
+              </h1>
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/40 hidden sm:inline-block">
+                1000 LVL
+              </span>
+            </div>
+            <div className="text-xs font-bold text-rose-400 flex items-center gap-1.5 -mt-0.5 tracking-wide group-hover:text-rose-300 transition-colors">
+              <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 inline-block animate-pulse" />
+              <span>with love for yesra</span>
+            </div>
+          </div>
+
+          {/* Original Jardinains Classic Arcade Status Bar */}
+          {gameState !== 'menu' && (
+            <div className="flex items-center gap-2 sm:gap-4 bg-slate-950/90 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-inner font-mono text-xs">
+              {/* Score LED */}
+              <div className="flex flex-col items-center min-w-[65px]">
+                <span className="text-[9px] font-bold text-amber-400/80 tracking-wider">SCORE</span>
+                <span className="text-sm md:text-base font-black text-amber-300 tracking-widest font-mono">
+                  {score.toString().padStart(6, '0')}
                 </span>
               </div>
+
+              <div className="w-px h-6 bg-slate-800" />
+
+              {/* Level */}
+              <div className="flex flex-col items-center min-w-[50px]">
+                <span className="text-[9px] font-bold text-cyan-400/80 tracking-wider">LEVEL</span>
+                <span className="text-sm md:text-base font-black text-cyan-300 font-mono">
+                  {currentLevelIdx + 1}
+                </span>
+              </div>
+
+              <div className="w-px h-6 bg-slate-800" />
+
+              {/* Lives */}
+              <div className="flex flex-col items-center min-w-[45px]">
+                <span className="text-[9px] font-bold text-rose-400/80 tracking-wider">LIVES</span>
+                <div className="flex items-center gap-1 text-sm md:text-base font-black text-rose-400 font-mono">
+                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
+                  <span>x{lives}</span>
+                </div>
+              </div>
+
+              {/* Nain Juggles Combo Counter */}
+              {engineRef.current.nainsJuggled > 0 && (
+                <>
+                  <div className="w-px h-6 bg-slate-800 hidden sm:block" />
+                  <div className="flex-col items-center min-w-[55px] animate-pulse hidden sm:flex">
+                    <span className="text-[9px] font-bold text-emerald-400 tracking-wider">JUGGLES</span>
+                    <span className="text-sm font-black text-emerald-300 font-mono">
+                      x{engineRef.current.nainsJuggled}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Quick Action Arcade Buttons */}
+          <div className="flex items-center gap-1.5 md:gap-2">
+            {gameState === 'playing' && (
+              <button 
+                onClick={() => { setGameState('paused'); stopMusic(); }}
+                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-mono font-bold text-xs border border-slate-700 transition flex items-center gap-1 shadow"
+                title="Pause Game (P / Esc)"
+              >
+                ⏸ <span className="hidden sm:inline">PAUSE</span>
+              </button>
             )}
-          </div>
-          
-          <div className="flex items-center gap-2">
             <button onClick={() => setShowOptions(true)} className="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-white" title="Settings">
               <Settings className="w-5 h-5" />
             </button>
@@ -695,7 +778,7 @@ export default function App() {
               <HelpCircle className="w-5 h-5" />
             </button>
             {gameState !== 'menu' && (
-              <button onClick={() => setShowQuit(true)} className="px-4 py-2 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 rounded-xl font-bold text-xs transition border border-rose-500/30">
+              <button onClick={() => setShowQuit(true)} className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 rounded-xl font-bold text-xs transition border border-rose-500/30">
                 QUIT
               </button>
             )}
@@ -709,40 +792,74 @@ export default function App() {
           </div>
         )}
 
-        {/* Game Canvas Area */}
-        <div className="relative w-full aspect-[4/3] bg-black rounded-2xl overflow-hidden border-2 border-slate-800 shadow-2xl shadow-emerald-900/20 flex flex-col items-center justify-center group">
+        {/* Game Canvas Area with Arcade Border Styling */}
+        <div className="relative w-full aspect-[4/3] bg-black rounded-2xl overflow-hidden border-2 border-amber-500/30 shadow-2xl shadow-emerald-900/20 flex flex-col items-center justify-center group">
           {gameState === 'menu' && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-900/90 backdrop-blur-sm">
-              <div className="bg-slate-950 p-8 rounded-3xl border border-slate-800 shadow-2xl text-center max-w-md w-full relative overflow-hidden">
-                <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4">
+              <div className="bg-gradient-to-b from-slate-900 to-slate-950 p-8 rounded-3xl border-2 border-amber-500/40 shadow-[0_0_50px_rgba(0,0,0,0.8)] text-center max-w-md w-full relative overflow-hidden">
+                {/* Decorative retro light accent */}
+                <div className="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
                 
-                <h2 className="text-4xl font-black text-white italic mb-2">JARDINAINS!</h2>
-                <div className="text-rose-400 text-xs font-bold mb-8 flex items-center justify-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5 fill-current" /> Dedicated with love for Yesra
+                {/* Authentic Golden 3D Title */}
+                <h2 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-yellow-600 italic font-mono tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)] mb-1">
+                  JARDINAINS!
+                </h2>
+                
+                {/* with love for yesra */}
+                <div className="text-rose-400 text-sm font-bold mb-2 flex items-center justify-center gap-1.5 tracking-wide">
+                  <Heart className="w-4 h-4 fill-rose-500 text-rose-500 animate-pulse" />
+                  <span>with love for yesra</span>
                 </div>
+
+                <p className="text-xs text-amber-200/70 font-mono tracking-wide mb-6">
+                  Classic 1,000-Level Brick Breaker & Nain Arcade
+                </p>
                 
                 <div className="space-y-3">
                   <button 
                     onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
-                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-lg rounded-xl shadow-lg transition flex items-center justify-center gap-2 group-hover:scale-[1.02]"
+                    className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-base rounded-xl shadow-[0_4px_14px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 border-t border-emerald-400/30 active:translate-y-0.5"
                   >
-                    <Play className="w-6 h-6" /> 
-                    {unlockedLevel > 1 ? `CONTINUE (LVL ${unlockedLevel})` : 'NEW GAME'}
+                    <Play className="w-5 h-5 fill-current" /> 
+                    {unlockedLevel > 1 ? `CONTINUE (LVL ${unlockedLevel})` : 'START GAME'}
                   </button>
                   
                   <button 
                     onClick={() => setShowLevelSelect(true)}
-                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
                   >
-                    <Grid className="w-5 h-5" /> LEVEL SELECT
+                    <Grid className="w-4 h-4 text-cyan-400" /> LEVEL SELECT (1,000 LVLS)
                   </button>
                   
                   <button 
                     onClick={() => setShowScores(true)}
-                    className="w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-bold rounded-xl border border-amber-500/30 transition flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold rounded-xl border border-amber-500/30 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
                   >
-                    <Trophy className="w-5 h-5" /> HIGH SCORES
+                    <Trophy className="w-4 h-4 text-amber-400" /> HIGH SCORES
                   </button>
+
+                  <div className="flex gap-2 pt-1">
+                    <button 
+                      onClick={() => setShowHowToPlay(true)}
+                      className="flex-1 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5"
+                    >
+                      <HelpCircle className="w-4 h-4 text-slate-400" /> HOW TO PLAY
+                    </button>
+                    <button 
+                      onClick={() => setShowOptions(true)}
+                      className="flex-1 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400" /> OPTIONS
+                    </button>
+                  </div>
+                </div>
+
+                {/* Controls legend */}
+                <div className="mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 font-mono flex items-center justify-around">
+                  <span>🖱️ Move: Mouse / Touch</span>
+                  <span>🚀 Launch: Click / Space</span>
+                  <span>⏸️ Pause: P / Esc</span>
                 </div>
               </div>
             </div>
