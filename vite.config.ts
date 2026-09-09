@@ -77,10 +77,10 @@ export default defineConfig(({ command }) => {
   return {
     base: './',
     build: {
-      outDir: 'dist',
+      outDir: '.',
+      emptyOutDir: false,
       rollupOptions: {
         input: {
-          
           index: path.resolve(__dirname, 'index.html'),
         },
         output: {
@@ -100,19 +100,15 @@ export default defineConfig(({ command }) => {
       {
         name: 'remove-module-type',
         closeBundle() {
-          const distHtmlPath = path.resolve(__dirname, 'dist', 'index.html');
-          if (fs.existsSync(distHtmlPath)) {
-            let html = fs.readFileSync(distHtmlPath, 'utf8');
+          const rootHtmlPath = path.resolve(__dirname, 'index.html');
+          if (fs.existsSync(rootHtmlPath)) {
+            let html = fs.readFileSync(rootHtmlPath, 'utf8');
             html = html.replace(/type="module"\s*crossorigin/g, '');
             html = html.replace(/crossorigin\s*type="module"/g, '');
             html = html.replace(/type="module"/g, '');
             html = html.replace(/<script\s+>/g, '<script>');
-            fs.writeFileSync(distHtmlPath, html);
-
-            // Copy the compiled production build to root index.html
-            const rootHtmlPath = path.resolve(__dirname, 'index.html');
-            fs.copyFileSync(distHtmlPath, rootHtmlPath);
-            console.log('Successfully copied production build to root index.html');
+            fs.writeFileSync(rootHtmlPath, html);
+            console.log('Successfully optimized root index.html directly');
           }
         }
       }
