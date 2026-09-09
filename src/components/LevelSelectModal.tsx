@@ -78,26 +78,26 @@ export default function LevelSelectModal({
   const displayedSlice = levels.slice(currentLevelsStart, currentLevelsEnd);
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border-2 border-slate-800 rounded-3xl max-w-4xl w-full p-6 shadow-2xl relative flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-slate-900 border-2 border-slate-800 rounded-2xl sm:rounded-3xl max-w-4xl w-full p-3.5 sm:p-6 shadow-2xl relative flex flex-col max-h-[94vh]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
-              <Grid className="w-6 h-6" />
+        <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+              <Grid className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-wide flex items-center gap-2">
+              <h3 className="text-base sm:text-2xl font-black text-white tracking-wide flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span>SELECT FROM 1,000 LEVELS</span>
-                <span className="text-xs font-semibold px-2.5 py-0.5 bg-rose-500/20 text-rose-300 rounded-full border border-rose-500/30">
+                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 bg-rose-500/20 text-rose-300 rounded-full border border-rose-500/30">
                   With love for Yesra
                 </span>
               </h3>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-slate-400">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-0.5">
+                <span className="text-[11px] sm:text-xs text-slate-400">
                   10 Thematic Eras • Jump to any stage or conquer sequentially
                 </span>
-                <span className="text-[11px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="text-[10px] sm:text-[11px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 px-1.5 sm:px-2 py-0.5 rounded-full flex items-center gap-1">
                   <Check className="w-3 h-3" />
                   <span>{unlockedLevel} / 1,000 Saved</span>
                 </span>
@@ -106,7 +106,7 @@ export default function LevelSelectModal({
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>

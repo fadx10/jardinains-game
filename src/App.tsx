@@ -736,34 +736,129 @@ export default function App() {
   const topLevel = Math.max(userHighestLevel, 3);
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 font-sans text-slate-100 overflow-x-hidden relative">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-1 sm:p-3 md:p-4 font-sans text-slate-100 overflow-x-hidden relative select-none">
       {/* Retro background ambient vignette */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-950/20 via-slate-950 to-black pointer-events-none" />
 
       {/* Main Jardinains Game Arcade Cabinet Window */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center my-auto">
+        
+        {/* MOBILE & TABLET TOP HUD (Visible on screens < lg) */}
+        <div className="w-full lg:hidden bg-[#031c09] border-2 border-[#0b3b17] rounded-xl p-2 sm:p-2.5 mb-2 shadow-lg font-['Sniglet'] flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h1 
+                onClick={() => setGameState('menu')}
+                className="text-xl sm:text-2xl font-black text-[#4ade80] drop-shadow-[0_1px_0_#000] cursor-pointer"
+              >
+                Jardinains!
+              </h1>
+              <span className="text-[10px] sm:text-xs text-rose-300 font-bold flex items-center gap-0.5">
+                <Heart className="w-2.5 h-2.5 fill-rose-500 text-rose-500 animate-pulse" /> yesra
+              </span>
+            </div>
+
+            {/* Quick Action Icons */}
+            <div className="flex items-center gap-1.5">
+              {gameState === 'playing' ? (
+                <button 
+                  onClick={() => { setGameState('paused'); stopMusic(); }}
+                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  title="Pause Game"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                </button>
+              ) : gameState === 'paused' ? (
+                <button 
+                  onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
+                  className="p-1.5 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-bold rounded-lg transition flex items-center justify-center"
+                  title="Resume Game"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                </button>
+              ) : null}
+
+              <button 
+                onClick={() => {
+                  const newSound = !options.soundEnabled;
+                  saveOptions({ ...options, soundEnabled: newSound });
+                }}
+                className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                title="Toggle Sound"
+              >
+                {options.soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[#4ade80]" /> : <VolumeX className="w-3.5 h-3.5 text-rose-400" />}
+              </button>
+
+              <button 
+                onClick={() => setShowLevelSelect(true)}
+                className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                title="Select Level"
+              >
+                <Grid className="w-3.5 h-3.5" />
+              </button>
+
+              <button 
+                onClick={() => setShowOptions(true)}
+                className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                title="Options"
+              >
+                <Settings className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Live Mobile Stats Bar */}
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 pt-1 border-t border-[#0e441c] text-center">
+            <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+              <div className="text-[10px] text-slate-300 font-bold">SCORE</div>
+              <div className="text-sm sm:text-base font-black text-[#86efac]">{score.toLocaleString()}</div>
+            </div>
+            <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+              <div className="text-[10px] text-slate-300 font-bold">LEVEL</div>
+              <div className="text-sm sm:text-base font-black text-[#86efac]">{currentLevelIdx + 1}</div>
+            </div>
+            <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+              <div className="text-[10px] text-slate-300 font-bold">LIVES</div>
+              <div className="text-sm sm:text-base font-black text-[#86efac] flex items-center justify-center gap-1">
+                <span>{lives}</span>
+                <Heart className="w-3 h-3 fill-rose-500 text-rose-500 inline" />
+              </div>
+            </div>
+            {engineRef.current.nainsJuggled > 0 ? (
+              <div className="bg-[#451a03] px-2 py-1 rounded-lg border border-amber-500/40 animate-pulse">
+                <div className="text-[10px] text-amber-300 font-bold">JUGGLES</div>
+                <div className="text-sm sm:text-base font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
+              </div>
+            ) : (
+              <div className="hidden sm:block bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
+                <div className="text-[10px] text-slate-300 font-bold">HIGH SCORE</div>
+                <div className="text-sm sm:text-base font-black text-amber-300">{topScore.toLocaleString()}</div>
+              </div>
+            )}
+          </div>
+        </div>
         
         {/* Authentic Jardinains Cabinet Layout (Black Playfield Left + Forest Green Sidebar Right) */}
-        <div className="w-full bg-[#031c09] p-2 sm:p-3 rounded-2xl border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col md:flex-row gap-3 items-stretch relative">
+        <div className="w-full bg-[#031c09] p-1.5 sm:p-2.5 md:p-3 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col lg:flex-row gap-2 sm:gap-3 items-stretch relative">
           
           {/* LEFT: Authentic Black Gameplay Canvas Frame */}
-          <div className="relative flex-1 bg-black rounded-xl border-2 border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] flex items-center justify-center">
+          <div className="relative flex-1 bg-black rounded-lg sm:rounded-xl border border-slate-700/80 sm:border-2 sm:border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] w-full max-h-[65vh] sm:max-h-[72vh] lg:max-h-none flex items-center justify-center touch-none">
             
             {/* Main Menu Overlay */}
             {gameState === 'menu' && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-4 overflow-y-auto">
-                <div className="flex flex-col items-center max-w-md w-full">
-                  {/* Authentic Jardinains Logo Banner from original game (Image 1) */}
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+                <div className="flex flex-col items-center max-w-md w-full my-auto">
+                  {/* Authentic Jardinains Logo Banner from original game */}
                   <JardinainsLogo size="md" showBrickFrame={true} showDedication={true} />
 
-                  <p className="text-xs text-emerald-300/80 font-['Sniglet'] tracking-wide mt-2 mb-4 text-center">
+                  <p className="text-[11px] sm:text-xs text-emerald-300/80 font-['Sniglet'] tracking-wide mt-1.5 mb-3 sm:mb-4 text-center">
                     Classic 1,000-Level Brick Breaker & Nain-Bouncing Arcade
                   </p>
 
-                  <div className="w-full max-w-xs space-y-2.5 font-['Sniglet']">
+                  <div className="w-full max-w-xs space-y-2 sm:space-y-2.5 font-['Sniglet']">
                     <button 
                       onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
-                      className="w-full py-2.5 bg-gradient-to-b from-[#4ade80] to-[#16a34a] hover:from-[#86efac] hover:to-[#22c55e] text-black font-extrabold text-lg rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.5)] transition-all flex items-center justify-center gap-2 border-2 border-[#14532d] active:translate-y-0.5 tracking-wider"
+                      className="w-full py-2.5 sm:py-3 bg-gradient-to-b from-[#4ade80] to-[#16a34a] hover:from-[#86efac] hover:to-[#22c55e] text-black font-extrabold text-base sm:text-lg rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.5)] transition-all flex items-center justify-center gap-2 border-2 border-[#14532d] active:translate-y-0.5 tracking-wider cursor-pointer"
                     >
                       <Play className="w-5 h-5 fill-current" /> 
                       {unlockedLevel > 1 ? `CONTINUE (LVL ${unlockedLevel})` : 'START GAME'}
@@ -771,28 +866,28 @@ export default function App() {
                     
                     <button 
                       onClick={() => setShowLevelSelect(true)}
-                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-[#86efac] font-bold rounded-xl border-2 border-[#166534] transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
+                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-[#86efac] font-bold rounded-xl border-2 border-[#166534] transition flex items-center justify-center gap-2 shadow active:translate-y-0.5 cursor-pointer text-sm sm:text-base"
                     >
                       <Grid className="w-4 h-4 text-[#4ade80]" /> LEVEL SELECT (1,000 LVLS)
                     </button>
                     
                     <button 
                       onClick={() => setShowScores(true)}
-                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-amber-300 font-bold rounded-xl border-2 border-[#854d0e]/60 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
+                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-amber-300 font-bold rounded-xl border-2 border-[#854d0e]/60 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5 cursor-pointer text-sm sm:text-base"
                     >
                       <Trophy className="w-4 h-4 text-amber-400" /> HIGH SCORES
                     </button>
 
-                    <div className="flex gap-2 pt-1">
+                    <div className="flex gap-2 pt-0.5">
                       <button 
                         onClick={() => setShowHowToPlay(true)}
-                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1"
+                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <HelpCircle className="w-3.5 h-3.5" /> HOW TO PLAY
                       </button>
                       <button 
                         onClick={() => setShowOptions(true)}
-                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1"
+                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <Settings className="w-3.5 h-3.5" /> OPTIONS
                       </button>
@@ -800,9 +895,9 @@ export default function App() {
                   </div>
 
                   {/* Controls legend */}
-                  <div className="mt-4 pt-3 border-t border-[#14532d] text-[11px] text-emerald-300/70 font-mono flex items-center justify-around w-full">
-                    <span>🖱️ Move: Mouse / Touch</span>
-                    <span>🚀 Launch: Click / Space</span>
+                  <div className="mt-3 pt-2 sm:mt-4 sm:pt-3 border-t border-[#14532d] text-[10px] sm:text-[11px] text-emerald-300/70 font-mono flex items-center justify-around w-full">
+                    <span>🖱️ Drag: Mouse / Touch</span>
+                    <span>🚀 Launch: Tap / Space</span>
                     <span>⏸️ Pause: P / Esc</span>
                   </div>
                 </div>
@@ -811,22 +906,22 @@ export default function App() {
 
             {/* Paused Overlay */}
             {gameState === 'paused' && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-[#22c55e]/60 text-center font-['Sniglet'] shadow-2xl max-w-xs w-full">
-                  <h2 className="text-3xl font-extrabold text-white mb-2">PAUSED</h2>
-                  <p className="text-sm text-rose-300 font-bold mb-5 flex items-center justify-center gap-1">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                <div className="bg-[#04260d] p-6 sm:p-8 rounded-3xl border-2 border-[#22c55e]/60 text-center font-['Sniglet'] shadow-2xl max-w-xs w-full">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">PAUSED</h2>
+                  <p className="text-xs sm:text-sm text-rose-300 font-bold mb-4 sm:mb-5 flex items-center justify-center gap-1">
                     <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
                   </p>
                   <div className="space-y-2">
                     <button 
                       onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }} 
-                      className="w-full py-2.5 bg-[#22c55e] text-black font-extrabold text-lg rounded-xl shadow hover:bg-[#4ade80] transition"
+                      className="w-full py-2.5 bg-[#22c55e] text-black font-extrabold text-base sm:text-lg rounded-xl shadow hover:bg-[#4ade80] transition cursor-pointer"
                     >
                       RESUME
                     </button>
                     <button 
                       onClick={() => { stopMusic(); setGameState('menu'); }} 
-                      className="w-full py-2 bg-[#063311] text-emerald-200 font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition"
+                      className="w-full py-2 bg-[#063311] text-emerald-200 font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition cursor-pointer"
                     >
                       MAIN MENU
                     </button>
@@ -837,16 +932,16 @@ export default function App() {
 
             {/* Level Cleared Overlay */}
             {gameState === 'levelclear' && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/75 backdrop-blur-md">
-                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-[#22c55e] text-center font-['Sniglet'] shadow-[0_0_50px_rgba(34,197,94,0.3)] max-w-sm w-full">
-                  <h2 className="text-3xl font-extrabold text-[#4ade80] mb-1">LEVEL {currentLevelIdx + 1} CLEARED!</h2>
-                  <p className="text-xs text-rose-300 font-bold mb-4 flex items-center justify-center gap-1">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
+                <div className="bg-[#04260d] p-6 sm:p-8 rounded-3xl border-2 border-[#22c55e] text-center font-['Sniglet'] shadow-[0_0_50px_rgba(34,197,94,0.3)] max-w-sm w-full">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[#4ade80] mb-1">LEVEL {currentLevelIdx + 1} CLEARED!</h2>
+                  <p className="text-xs text-rose-300 font-bold mb-3 sm:mb-4 flex items-center justify-center gap-1">
                     <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
                   </p>
-                  <p className="text-white text-lg font-bold mb-6">SCORE: <span className="text-[#86efac]">{score.toLocaleString()}</span></p>
+                  <p className="text-white text-base sm:text-lg font-bold mb-4 sm:mb-6">SCORE: <span className="text-[#86efac]">{score.toLocaleString()}</span></p>
                   <button 
                     onClick={() => startGame(currentLevelIdx + 1)} 
-                    className="w-full py-3 bg-[#22c55e] hover:bg-[#4ade80] text-black font-extrabold text-lg rounded-xl shadow-lg transition"
+                    className="w-full py-2.5 sm:py-3 bg-[#22c55e] hover:bg-[#4ade80] text-black font-extrabold text-base sm:text-lg rounded-xl shadow-lg transition cursor-pointer"
                   >
                     NEXT LEVEL
                   </button>
@@ -856,20 +951,20 @@ export default function App() {
 
             {/* Victory Overlay */}
             {gameState === 'gamewin' && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/85 backdrop-blur-md">
-                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-amber-400 text-center font-['Sniglet'] shadow-[0_0_60px_rgba(251,191,36,0.3)] max-w-md mx-4">
-                  <div className="text-5xl mb-2">👑</div>
-                  <h2 className="text-3xl font-extrabold text-amber-400 mb-1">VICTORY!</h2>
-                  <p className="text-rose-300 text-sm font-bold mb-4 flex items-center justify-center gap-1.5">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+                <div className="bg-[#04260d] p-6 sm:p-8 rounded-3xl border-2 border-amber-400 text-center font-['Sniglet'] shadow-[0_0_60px_rgba(251,191,36,0.3)] max-w-md mx-4">
+                  <div className="text-4xl sm:text-5xl mb-2">👑</div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-amber-400 mb-1">VICTORY!</h2>
+                  <p className="text-rose-300 text-xs sm:text-sm font-bold mb-3 sm:mb-4 flex items-center justify-center gap-1.5">
                     <Heart className="w-4 h-4 fill-rose-500 text-rose-500 animate-pulse" /> Completed with love for yesra
                   </p>
-                  <p className="text-slate-200 mb-6 font-mono text-sm">
+                  <p className="text-slate-200 mb-4 sm:mb-6 font-mono text-xs sm:text-sm">
                     All 1,000 Levels Conquered!<br />
-                    Final Score: <span className="text-amber-300 font-bold text-lg">{score.toLocaleString()}</span>
+                    Final Score: <span className="text-amber-300 font-bold text-base sm:text-lg">{score.toLocaleString()}</span>
                   </p>
-                  <div className="flex gap-3 justify-center">
-                    <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="px-6 py-2.5 bg-[#063311] text-white font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition">MENU</button>
-                    <button onClick={() => startGame(0)} className="px-6 py-2.5 bg-[#22c55e] text-black font-extrabold rounded-xl shadow-lg hover:bg-[#4ade80] transition">PLAY AGAIN</button>
+                  <div className="flex gap-2 sm:gap-3 justify-center">
+                    <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#063311] text-white font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition text-sm sm:text-base">MENU</button>
+                    <button onClick={() => startGame(0)} className="px-4 sm:px-6 py-2 sm:py-2.5 bg-[#22c55e] text-black font-extrabold rounded-xl shadow-lg hover:bg-[#4ade80] transition text-sm sm:text-base">PLAY AGAIN</button>
                   </div>
                 </div>
               </div>
@@ -877,16 +972,16 @@ export default function App() {
 
             {/* Game Over Overlay */}
             {gameState === 'gameover' && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md">
-                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-rose-500/60 text-center font-['Sniglet'] shadow-[0_0_50px_rgba(244,63,94,0.3)] max-w-sm w-full">
-                  <h2 className="text-4xl font-extrabold text-rose-500 mb-1">GAME OVER</h2>
-                  <p className="text-xs text-rose-300 font-bold mb-4 flex items-center justify-center gap-1">
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+                <div className="bg-[#04260d] p-6 sm:p-8 rounded-3xl border-2 border-rose-500/60 text-center font-['Sniglet'] shadow-[0_0_50px_rgba(244,63,94,0.3)] max-w-sm w-full">
+                  <h2 className="text-3xl sm:text-4xl font-extrabold text-rose-500 mb-1">GAME OVER</h2>
+                  <p className="text-xs text-rose-300 font-bold mb-3 sm:mb-4 flex items-center justify-center gap-1">
                     <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
                   </p>
-                  <p className="text-slate-200 mb-6">Final Score: <span className="text-[#86efac] font-bold text-xl">{score.toLocaleString()}</span></p>
-                  <div className="flex gap-3 justify-center">
-                    <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="flex-1 py-2.5 bg-[#063311] text-white font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition">MENU</button>
-                    <button onClick={() => startGame(currentLevelIdx)} className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl shadow-lg transition">RETRY</button>
+                  <p className="text-slate-200 mb-4 sm:mb-6 text-sm sm:text-base">Final Score: <span className="text-[#86efac] font-bold text-lg sm:text-xl">{score.toLocaleString()}</span></p>
+                  <div className="flex gap-2 sm:gap-3 justify-center">
+                    <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="flex-1 py-2 sm:py-2.5 bg-[#063311] text-white font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition text-sm">MENU</button>
+                    <button onClick={() => startGame(currentLevelIdx)} className="flex-1 py-2 sm:py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl shadow-lg transition text-sm">RETRY</button>
                   </div>
                 </div>
               </div>
@@ -901,12 +996,12 @@ export default function App() {
               onMouseDown={handleMouseDown}
               onTouchMove={handleTouchMove}
               onTouchStart={handleTouchStart}
-              className="w-full h-full object-contain cursor-none touch-none"
+              className="w-full h-full object-contain cursor-none touch-none select-none"
             />
           </div>
 
-          {/* RIGHT: Authentic Jardinains Forest Green Sidebar (Matching Screenshot 2) */}
-          <aside className="w-full md:w-56 lg:w-60 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
+          {/* RIGHT: Authentic Jardinains Forest Green Sidebar (Visible on Desktop lg:) */}
+          <aside className="hidden lg:flex w-56 lg:w-60 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
             
             {/* Top: Title & Dedication */}
             <div className="flex flex-col items-center">
@@ -994,7 +1089,7 @@ export default function App() {
                 {gameState === 'playing' ? (
                   <button 
                     onClick={() => { setGameState('paused'); stopMusic(); }}
-                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
                     title="Pause Game"
                   >
                     <Pause className="w-3 h-3" /> Pause
@@ -1002,14 +1097,14 @@ export default function App() {
                 ) : gameState === 'paused' ? (
                   <button 
                     onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
-                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1"
+                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Play className="w-3 h-3 fill-current" /> Resume
                   </button>
                 ) : (
                   <button 
                     onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
-                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1"
+                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1 cursor-pointer"
                   >
                     <Play className="w-3 h-3 fill-current" /> Play
                   </button>
@@ -1020,7 +1115,7 @@ export default function App() {
                     const newSound = !options.soundEnabled;
                     saveOptions({ ...options, soundEnabled: newSound });
                   }}
-                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
                   title="Toggle Sound"
                 >
                   {options.soundEnabled ? <Volume2 className="w-3 h-3 text-[#4ade80]" /> : <VolumeX className="w-3 h-3 text-rose-400" />}
@@ -1031,13 +1126,13 @@ export default function App() {
               <div className="grid grid-cols-2 gap-1.5">
                 <button 
                   onClick={() => setShowLevelSelect(true)}
-                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Grid className="w-3 h-3" /> Levels
                 </button>
                 <button 
                   onClick={() => setShowOptions(true)}
-                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <Settings className="w-3 h-3" /> Options
                 </button>
@@ -1053,14 +1148,19 @@ export default function App() {
         </div>
 
         {/* Small bottom bar */}
-        <footer className="w-full text-center text-xs text-slate-500 flex items-center justify-between px-2 pt-2">
-          <button onClick={() => setShowAbout(true)} className="hover:text-emerald-400 transition flex items-center gap-1">
+        <footer className="w-full text-center text-xs text-slate-400 flex flex-wrap items-center justify-between gap-2 px-2 pt-2 pb-1">
+          <button onClick={() => setShowAbout(true)} className="hover:text-emerald-400 transition flex items-center gap-1 cursor-pointer">
             <Info className="w-3.5 h-3.5" /> About Jardinains Remake
           </button>
-          <span className="font-['Sniglet'] text-rose-400/80 flex items-center gap-1">
-            <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> with love for yesra
+          <span className="font-['Sniglet'] text-rose-400/90 flex items-center gap-1 font-semibold">
+            <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse" /> with love for yesra
           </span>
-          <span className="font-mono text-[11px]">1,000 Levels</span>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowScores(true)} className="hover:text-amber-400 transition flex items-center gap-1 cursor-pointer font-bold">
+              <Trophy className="w-3.5 h-3.5 text-amber-400" /> High Scores
+            </button>
+            <span className="font-mono text-[11px] text-slate-500 hidden sm:inline">• 1,000 Levels</span>
+          </div>
         </footer>
 
       </div>
