@@ -66,8 +66,8 @@ export default function HowToPlayModal({ isOpen, onClose }: HowToPlayModalProps)
                     <td className="py-1.5 px-3 text-right text-amber-400 font-bold">+250</td>
                   </tr>
                   <tr className="hover:bg-slate-800/40">
-                    <td className="py-1.5 px-3 font-sans text-slate-200">Jardinain Interaction / Direct Hit</td>
-                    <td className="py-1.5 px-3 text-right text-sky-400 font-bold">+100</td>
+                    <td className="py-1.5 px-3 font-sans text-slate-200">Jardinain Direct Hit & Reward Drop</td>
+                    <td className="py-1.5 px-3 text-right text-sky-400 font-bold">+500 to +2,000 + Bonus</td>
                   </tr>
                   <tr className="hover:bg-slate-800/40">
                     <td className="py-1.5 px-3 font-sans text-slate-200">Level Completed (Base Clear)</td>

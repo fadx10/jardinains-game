@@ -15,8 +15,9 @@ import LevelSelectModal from './components/LevelSelectModal';
 import OptionsModal from './components/OptionsModal';
 import QuitModal from './components/QuitModal';
 import PowerUpTimers from './components/PowerUpTimers';
+import JardinainsLogo from './components/JardinainsLogo';
 
-import { Play, Settings, Trophy, HelpCircle, Info, Grid, Heart } from 'lucide-react';
+import { Play, Pause, Settings, Trophy, HelpCircle, Info, Grid, Heart, Volume2, VolumeX, RotateCcw } from 'lucide-react';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -539,23 +540,82 @@ export default function App() {
       if (pr.rotation !== undefined && pr.vRot) pr.rotation += pr.vRot;
 
       if (pr.type === 'player_laser') {
-        // Hit bricks?
         let hit = false;
-        for (let j = engine.bricks.length - 1; j >= 0; j--) {
-          const br = engine.bricks[j];
-          if (pr.x >= br.x && pr.x <= br.x + br.w && pr.y >= br.y && pr.y <= br.y + br.h) {
+
+        // Hit Jardinains first!
+        for (let nIdx = engine.nains.length - 1; nIdx >= 0; nIdx--) {
+          const nain = engine.nains[nIdx];
+          if (
+            nain.state !== 'splat' &&
+            nain.state !== 'poof' &&
+            pr.x >= nain.x - 4 &&
+            pr.x <= nain.x + nain.w + 4 &&
+            pr.y >= nain.y - 4 &&
+            pr.y <= nain.y + nain.h + 4
+          ) {
             engine.projectiles.splice(i, 1);
             hit = true;
-            if (!br.unbreakable) {
-              br.hp -= 1;
-              if (br.hp <= 0) {
-                engine.bricks.splice(j, 1);
-                playSound('brick_break');
-                setScore(s => s + 50);
-                if (engine.bricks.filter(b => !b.unbreakable).length === 0) handleLevelComplete();
-              }
-            } else { playSound('unbreakable_hit'); }
+
+            // Knock nain into the air!
+            nain.isParachuting = false;
+            nain.standingOnBrickId = null;
+            nain.state = 'falling';
+            nain.vy = -6.2;
+            nain.vx = (Math.random() - 0.5) * 4;
+            nain.bounceCount = (nain.bounceCount || 0) + 1;
+
+            const hitScore = nain.hatType === 'gold' ? 2000 : nain.hatType === 'green' ? 1000 : 600;
+            setScore(s => s + hitScore);
+            playSound('nain_bounce', { pitchMult: 1.25 });
+            playSound('bonus_brick');
+
+            // Drop guaranteed bonus reward!
+            engine.powerups.push(createPowerUp(nain.x + nain.w / 2, nain.y));
+
+            engine.floatingTexts.push({
+              text: `🎯 LASER HIT! +${hitScore}`,
+              x: nain.x + nain.w / 2,
+              y: nain.y - 18,
+              color: '#38bdf8',
+              alpha: 1,
+              vy: -1.8,
+            });
+
+            for (let p = 0; p < 14; p++) {
+              engine.particles.push({
+                x: nain.x + nain.w / 2,
+                y: nain.y + nain.h / 2,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                radius: Math.random() * 3.5 + 2,
+                color: '#38bdf8',
+                alpha: 1,
+                decay: 0.04,
+                shape: 'star',
+              });
+            }
             break;
+          }
+        }
+
+        // Hit bricks?
+        if (!hit) {
+          for (let j = engine.bricks.length - 1; j >= 0; j--) {
+            const br = engine.bricks[j];
+            if (pr.x >= br.x && pr.x <= br.x + br.w && pr.y >= br.y && pr.y <= br.y + br.h) {
+              engine.projectiles.splice(i, 1);
+              hit = true;
+              if (!br.unbreakable) {
+                br.hp -= 1;
+                if (br.hp <= 0) {
+                  engine.bricks.splice(j, 1);
+                  playSound('brick_break');
+                  setScore(s => s + 50);
+                  if (engine.bricks.filter(b => !b.unbreakable).length === 0) handleLevelComplete();
+                }
+              } else { playSound('unbreakable_hit'); }
+              break;
+            }
           }
         }
         if (!hit && pr.y < 0) engine.projectiles.splice(i, 1);
@@ -680,262 +740,351 @@ export default function App() {
     ctx.globalAlpha = 1;
   };
 
+  const userHighScore = highScores.length > 0 ? Math.max(...highScores.map(h => h.score), score) : Math.max(score, 125);
+  const userHighestLevel = Math.max(unlockedLevel, currentLevelIdx + 1);
+  const topScore = Math.max(userHighScore, 20615);
+  const topLevel = Math.max(userHighestLevel, 3);
+
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center font-sans text-slate-100 overflow-hidden relative">
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black opacity-80 pointer-events-none" />
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-2 sm:p-4 font-sans text-slate-100 overflow-x-hidden relative">
+      {/* Retro background ambient vignette */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-950/20 via-slate-950 to-black pointer-events-none" />
 
-      {/* Main Game Container */}
-      <div className="relative z-10 w-full max-w-4xl px-4 flex flex-col gap-4">
+      {/* Main Jardinains Game Arcade Cabinet Window */}
+      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
         
-        {/* Header HUD - Authentic Original Jardinains Arcade Cabinet Frame */}
-        <header className="flex items-center justify-between bg-slate-900/95 backdrop-blur-md p-3 md:p-3.5 rounded-2xl border-2 border-amber-500/40 shadow-[0_10px_30px_rgba(0,0,0,0.8)] relative overflow-hidden">
-          {/* Subtle gold trim line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 opacity-80" />
-
-          {/* Left: JARDINAINS! with love for yesra right underneath */}
-          <div 
-            className="flex flex-col cursor-pointer select-none group" 
-            onClick={() => setGameState('menu')} 
-            title="Return to Main Menu"
-          >
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl md:text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-yellow-400 to-amber-500 italic font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
-                JARDINAINS!
-              </h1>
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/40 hidden sm:inline-block">
-                1000 LVL
-              </span>
-            </div>
-            <div className="text-xs font-bold text-rose-400 flex items-center gap-1.5 -mt-0.5 tracking-wide group-hover:text-rose-300 transition-colors">
-              <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 inline-block animate-pulse" />
-              <span>with love for yesra</span>
-            </div>
-          </div>
-
-          {/* Original Jardinains Classic Arcade Status Bar */}
-          {gameState !== 'menu' && (
-            <div className="flex items-center gap-2 sm:gap-4 bg-slate-950/90 px-3 py-1.5 rounded-xl border border-amber-500/30 shadow-inner font-mono text-xs">
-              {/* Score LED */}
-              <div className="flex flex-col items-center min-w-[65px]">
-                <span className="text-[9px] font-bold text-amber-400/80 tracking-wider">SCORE</span>
-                <span className="text-sm md:text-base font-black text-amber-300 tracking-widest font-mono">
-                  {score.toString().padStart(6, '0')}
-                </span>
-              </div>
-
-              <div className="w-px h-6 bg-slate-800" />
-
-              {/* Level */}
-              <div className="flex flex-col items-center min-w-[50px]">
-                <span className="text-[9px] font-bold text-cyan-400/80 tracking-wider">LEVEL</span>
-                <span className="text-sm md:text-base font-black text-cyan-300 font-mono">
-                  {currentLevelIdx + 1}
-                </span>
-              </div>
-
-              <div className="w-px h-6 bg-slate-800" />
-
-              {/* Lives */}
-              <div className="flex flex-col items-center min-w-[45px]">
-                <span className="text-[9px] font-bold text-rose-400/80 tracking-wider">LIVES</span>
-                <div className="flex items-center gap-1 text-sm md:text-base font-black text-rose-400 font-mono">
-                  <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
-                  <span>x{lives}</span>
-                </div>
-              </div>
-
-              {/* Nain Juggles Combo Counter */}
-              {engineRef.current.nainsJuggled > 0 && (
-                <>
-                  <div className="w-px h-6 bg-slate-800 hidden sm:block" />
-                  <div className="flex-col items-center min-w-[55px] animate-pulse hidden sm:flex">
-                    <span className="text-[9px] font-bold text-emerald-400 tracking-wider">JUGGLES</span>
-                    <span className="text-sm font-black text-emerald-300 font-mono">
-                      x{engineRef.current.nainsJuggled}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Quick Action Arcade Buttons */}
-          <div className="flex items-center gap-1.5 md:gap-2">
-            {gameState === 'playing' && (
-              <button 
-                onClick={() => { setGameState('paused'); stopMusic(); }}
-                className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-mono font-bold text-xs border border-slate-700 transition flex items-center gap-1 shadow"
-                title="Pause Game (P / Esc)"
-              >
-                ⏸ <span className="hidden sm:inline">PAUSE</span>
-              </button>
-            )}
-            <button onClick={() => setShowOptions(true)} className="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-white" title="Settings">
-              <Settings className="w-5 h-5" />
-            </button>
-            <button onClick={() => setShowHowToPlay(true)} className="p-2 hover:bg-slate-800 rounded-xl transition text-slate-400 hover:text-white" title="How to Play">
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            {gameState !== 'menu' && (
-              <button onClick={() => setShowQuit(true)} className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 rounded-xl font-bold text-xs transition border border-rose-500/30">
-                QUIT
-              </button>
-            )}
-          </div>
-        </header>
-
-        {/* Active Powerup Timers */}
+        {/* Active Powerup Timers HUD (shown during play) */}
         {gameState === 'playing' && activePowerUps.length > 0 && (
-          <div className="w-full flex justify-center -mb-2">
+          <div className="w-full flex justify-center mb-2">
             <PowerUpTimers activePowerUps={activePowerUps} />
           </div>
         )}
 
-        {/* Game Canvas Area with Arcade Border Styling */}
-        <div className="relative w-full aspect-[4/3] bg-black rounded-2xl overflow-hidden border-2 border-amber-500/30 shadow-2xl shadow-emerald-900/20 flex flex-col items-center justify-center group">
-          {gameState === 'menu' && (
-            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4">
-              <div className="bg-gradient-to-b from-slate-900 to-slate-950 p-8 rounded-3xl border-2 border-amber-500/40 shadow-[0_0_50px_rgba(0,0,0,0.8)] text-center max-w-md w-full relative overflow-hidden">
-                {/* Decorative retro light accent */}
-                <div className="absolute -top-12 -right-12 w-36 h-36 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-12 -left-12 w-36 h-36 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
-                
-                {/* Authentic Golden 3D Title */}
-                <h2 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-yellow-600 italic font-mono tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)] mb-1">
-                  JARDINAINS!
-                </h2>
-                
-                {/* with love for yesra */}
-                <div className="text-rose-400 text-sm font-bold mb-2 flex items-center justify-center gap-1.5 tracking-wide">
-                  <Heart className="w-4 h-4 fill-rose-500 text-rose-500 animate-pulse" />
-                  <span>with love for yesra</span>
-                </div>
+        {/* Authentic Jardinains Cabinet Layout (Black Playfield Left + Forest Green Sidebar Right) */}
+        <div className="w-full bg-[#031c09] p-2 sm:p-3 rounded-2xl border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col md:flex-row gap-3 items-stretch relative">
+          
+          {/* LEFT: Authentic Black Gameplay Canvas Frame */}
+          <div className="relative flex-1 bg-black rounded-xl border-2 border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] flex items-center justify-center">
+            
+            {/* Main Menu Overlay */}
+            {gameState === 'menu' && (
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-4 overflow-y-auto">
+                <div className="flex flex-col items-center max-w-md w-full">
+                  {/* Authentic Jardinains Logo Banner from original game (Image 1) */}
+                  <JardinainsLogo size="md" showBrickFrame={true} showDedication={true} />
 
-                <p className="text-xs text-amber-200/70 font-mono tracking-wide mb-6">
-                  Classic 1,000-Level Brick Breaker & Nain Arcade
-                </p>
-                
-                <div className="space-y-3">
-                  <button 
-                    onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
-                    className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-base rounded-xl shadow-[0_4px_14px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 border-t border-emerald-400/30 active:translate-y-0.5"
-                  >
-                    <Play className="w-5 h-5 fill-current" /> 
-                    {unlockedLevel > 1 ? `CONTINUE (LVL ${unlockedLevel})` : 'START GAME'}
-                  </button>
-                  
-                  <button 
-                    onClick={() => setShowLevelSelect(true)}
-                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold rounded-xl border border-slate-700 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
-                  >
-                    <Grid className="w-4 h-4 text-cyan-400" /> LEVEL SELECT (1,000 LVLS)
-                  </button>
-                  
-                  <button 
-                    onClick={() => setShowScores(true)}
-                    className="w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 font-bold rounded-xl border border-amber-500/30 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
-                  >
-                    <Trophy className="w-4 h-4 text-amber-400" /> HIGH SCORES
-                  </button>
+                  <p className="text-xs text-emerald-300/80 font-['Sniglet'] tracking-wide mt-2 mb-4 text-center">
+                    Classic 1,000-Level Brick Breaker & Nain-Bouncing Arcade
+                  </p>
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="w-full max-w-xs space-y-2.5 font-['Sniglet']">
                     <button 
-                      onClick={() => setShowHowToPlay(true)}
-                      className="flex-1 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5"
+                      onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
+                      className="w-full py-2.5 bg-gradient-to-b from-[#4ade80] to-[#16a34a] hover:from-[#86efac] hover:to-[#22c55e] text-black font-extrabold text-lg rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.5)] transition-all flex items-center justify-center gap-2 border-2 border-[#14532d] active:translate-y-0.5 tracking-wider"
                     >
-                      <HelpCircle className="w-4 h-4 text-slate-400" /> HOW TO PLAY
+                      <Play className="w-5 h-5 fill-current" /> 
+                      {unlockedLevel > 1 ? `CONTINUE (LVL ${unlockedLevel})` : 'START GAME'}
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowLevelSelect(true)}
+                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-[#86efac] font-bold rounded-xl border-2 border-[#166534] transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
+                    >
+                      <Grid className="w-4 h-4 text-[#4ade80]" /> LEVEL SELECT (1,000 LVLS)
+                    </button>
+                    
+                    <button 
+                      onClick={() => setShowScores(true)}
+                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-amber-300 font-bold rounded-xl border-2 border-[#854d0e]/60 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5"
+                    >
+                      <Trophy className="w-4 h-4 text-amber-400" /> HIGH SCORES
+                    </button>
+
+                    <div className="flex gap-2 pt-1">
+                      <button 
+                        onClick={() => setShowHowToPlay(true)}
+                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" /> HOW TO PLAY
+                      </button>
+                      <button 
+                        onClick={() => setShowOptions(true)}
+                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1"
+                      >
+                        <Settings className="w-3.5 h-3.5" /> OPTIONS
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Controls legend */}
+                  <div className="mt-4 pt-3 border-t border-[#14532d] text-[11px] text-emerald-300/70 font-mono flex items-center justify-around w-full">
+                    <span>🖱️ Move: Mouse / Touch</span>
+                    <span>🚀 Launch: Click / Space</span>
+                    <span>⏸️ Pause: P / Esc</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Paused Overlay */}
+            {gameState === 'paused' && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-[#22c55e]/60 text-center font-['Sniglet'] shadow-2xl max-w-xs w-full">
+                  <h2 className="text-3xl font-extrabold text-white mb-2">PAUSED</h2>
+                  <p className="text-sm text-rose-300 font-bold mb-5 flex items-center justify-center gap-1">
+                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
+                  </p>
+                  <div className="space-y-2">
+                    <button 
+                      onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }} 
+                      className="w-full py-2.5 bg-[#22c55e] text-black font-extrabold text-lg rounded-xl shadow hover:bg-[#4ade80] transition"
+                    >
+                      RESUME
                     </button>
                     <button 
-                      onClick={() => setShowOptions(true)}
-                      className="flex-1 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5"
+                      onClick={() => { stopMusic(); setGameState('menu'); }} 
+                      className="w-full py-2 bg-[#063311] text-emerald-200 font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition"
                     >
-                      <Settings className="w-4 h-4 text-slate-400" /> OPTIONS
+                      MAIN MENU
                     </button>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Controls legend */}
-                <div className="mt-6 pt-4 border-t border-slate-800/80 text-[11px] text-slate-400 font-mono flex items-center justify-around">
-                  <span>🖱️ Move: Mouse / Touch</span>
-                  <span>🚀 Launch: Click / Space</span>
-                  <span>⏸️ Pause: P / Esc</span>
+            {/* Level Cleared Overlay */}
+            {gameState === 'levelclear' && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/75 backdrop-blur-md">
+                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-[#22c55e] text-center font-['Sniglet'] shadow-[0_0_50px_rgba(34,197,94,0.3)] max-w-sm w-full">
+                  <h2 className="text-3xl font-extrabold text-[#4ade80] mb-1">LEVEL {currentLevelIdx + 1} CLEARED!</h2>
+                  <p className="text-xs text-rose-300 font-bold mb-4 flex items-center justify-center gap-1">
+                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
+                  </p>
+                  <p className="text-white text-lg font-bold mb-6">SCORE: <span className="text-[#86efac]">{score.toLocaleString()}</span></p>
+                  <button 
+                    onClick={() => startGame(currentLevelIdx + 1)} 
+                    className="w-full py-3 bg-[#22c55e] hover:bg-[#4ade80] text-black font-extrabold text-lg rounded-xl shadow-lg transition"
+                  >
+                    NEXT LEVEL
+                  </button>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {gameState === 'paused' && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-              <div className="bg-slate-900 p-8 rounded-3xl border border-slate-700 text-center">
-                <h2 className="text-3xl font-black text-white mb-6">PAUSED</h2>
-                <button onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-500 transition">RESUME</button>
-              </div>
-            </div>
-          )}
-
-          {gameState === 'levelclear' && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-md">
-              <div className="bg-slate-900 p-8 rounded-3xl border border-emerald-500/50 text-center shadow-[0_0_50px_rgba(16,185,129,0.2)]">
-                <h2 className="text-3xl font-black text-emerald-400 mb-2">LEVEL {currentLevelIdx + 1} CLEARED!</h2>
-                <p className="text-slate-400 mb-6 font-mono font-bold">SCORE: {score.toLocaleString()}</p>
-                <button onClick={() => startGame(currentLevelIdx + 1)} className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-500 transition">NEXT LEVEL</button>
-              </div>
-            </div>
-          )}
-
-          {gameState === 'gamewin' && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/85 backdrop-blur-md">
-              <div className="bg-slate-900 p-8 rounded-3xl border border-amber-500/60 text-center shadow-[0_0_60px_rgba(251,191,36,0.3)] max-w-md mx-4">
-                <div className="text-5xl mb-3">👑</div>
-                <h2 className="text-3xl font-black text-amber-400 mb-2">VICTORY!</h2>
-                <p className="text-rose-400 text-sm font-bold mb-4 flex items-center justify-center gap-1.5">
-                  <Heart className="w-4 h-4 fill-current" /> Completed with Love for Yesra
-                </p>
-                <p className="text-slate-300 mb-6 font-mono">
-                  All 1,000 Levels Conquered!<br />
-                  Final Score: <span className="text-amber-400 font-bold">{score.toLocaleString()}</span>
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="px-6 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition">MENU</button>
-                  <button onClick={() => startGame(0)} className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg hover:bg-emerald-500 transition">PLAY AGAIN</button>
+            {/* Victory Overlay */}
+            {gameState === 'gamewin' && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/85 backdrop-blur-md">
+                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-amber-400 text-center font-['Sniglet'] shadow-[0_0_60px_rgba(251,191,36,0.3)] max-w-md mx-4">
+                  <div className="text-5xl mb-2">👑</div>
+                  <h2 className="text-3xl font-extrabold text-amber-400 mb-1">VICTORY!</h2>
+                  <p className="text-rose-300 text-sm font-bold mb-4 flex items-center justify-center gap-1.5">
+                    <Heart className="w-4 h-4 fill-rose-500 text-rose-500 animate-pulse" /> Completed with love for yesra
+                  </p>
+                  <p className="text-slate-200 mb-6 font-mono text-sm">
+                    All 1,000 Levels Conquered!<br />
+                    Final Score: <span className="text-amber-300 font-bold text-lg">{score.toLocaleString()}</span>
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="px-6 py-2.5 bg-[#063311] text-white font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition">MENU</button>
+                    <button onClick={() => startGame(0)} className="px-6 py-2.5 bg-[#22c55e] text-black font-extrabold rounded-xl shadow-lg hover:bg-[#4ade80] transition">PLAY AGAIN</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {gameState === 'gameover' && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md">
-              <div className="bg-slate-900 p-8 rounded-3xl border border-rose-500/50 text-center shadow-[0_0_50px_rgba(244,63,94,0.2)]">
-                <h2 className="text-4xl font-black text-rose-500 mb-2">GAME OVER</h2>
-                <p className="text-slate-300 mb-6 font-mono">Final Score: <span className="text-amber-400 font-bold">{score.toLocaleString()}</span></p>
-                <div className="flex gap-3 justify-center">
-                  <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="px-6 py-3 bg-slate-800 text-white font-bold rounded-xl hover:bg-slate-700 transition">MENU</button>
-                  <button onClick={() => startGame(currentLevelIdx)} className="px-6 py-3 bg-rose-600 text-white font-bold rounded-xl shadow-lg hover:bg-rose-500 transition">RETRY LEVEL</button>
+            {/* Game Over Overlay */}
+            {gameState === 'gameover' && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/80 backdrop-blur-md">
+                <div className="bg-[#04260d] p-8 rounded-3xl border-2 border-rose-500/60 text-center font-['Sniglet'] shadow-[0_0_50px_rgba(244,63,94,0.3)] max-w-sm w-full">
+                  <h2 className="text-4xl font-extrabold text-rose-500 mb-1">GAME OVER</h2>
+                  <p className="text-xs text-rose-300 font-bold mb-4 flex items-center justify-center gap-1">
+                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
+                  </p>
+                  <p className="text-slate-200 mb-6">Final Score: <span className="text-[#86efac] font-bold text-xl">{score.toLocaleString()}</span></p>
+                  <div className="flex gap-3 justify-center">
+                    <button onClick={() => { setGameState('menu'); setShowScores(true); }} className="flex-1 py-2.5 bg-[#063311] text-white font-bold rounded-xl border border-[#166534] hover:bg-[#094718] transition">MENU</button>
+                    <button onClick={() => startGame(currentLevelIdx)} className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl shadow-lg transition">RETRY</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-            onMouseMove={handleMouseMove}
-            onMouseDown={handleMouseDown}
-            onTouchMove={handleTouchMove}
-            onTouchStart={handleTouchStart}
-            className="w-full h-full object-contain cursor-none touch-none"
-          />
+            {/* The Actual Game Canvas */}
+            <canvas
+              ref={canvasRef}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+              onMouseMove={handleMouseMove}
+              onMouseDown={handleMouseDown}
+              onTouchMove={handleTouchMove}
+              onTouchStart={handleTouchStart}
+              className="w-full h-full object-contain cursor-none touch-none"
+            />
+          </div>
+
+          {/* RIGHT: Authentic Jardinains Forest Green Sidebar (Matching Screenshot 2) */}
+          <aside className="w-full md:w-56 lg:w-60 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
+            
+            {/* Top: Title & Dedication */}
+            <div className="flex flex-col items-center">
+              <h1 
+                onClick={() => setGameState('menu')}
+                className="text-3xl lg:text-4xl font-extrabold text-[#4ade80] drop-shadow-[0_2px_0_#000] tracking-wide cursor-pointer hover:scale-105 transition-transform"
+                title="Return to Menu"
+              >
+                Jardinains!
+              </h1>
+
+              {/* with love for yesra right under Jardinains */}
+              <div className="text-center text-xs font-bold text-rose-300 flex items-center justify-center gap-1 mt-0.5 tracking-wide">
+                <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse inline-block" />
+                <span>with love for yesra</span>
+              </div>
+
+              {/* Player Name */}
+              <div className="text-sm font-bold text-[#86efac] mt-2 mb-2 tracking-wide">
+                yesra
+              </div>
+
+              {/* Score */}
+              <div className="w-full flex flex-col items-center mt-1">
+                <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  Score:
+                </div>
+                <div className="text-2xl lg:text-3xl font-black text-[#86efac] tracking-wider drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
+                  {score.toLocaleString()}
+                </div>
+              </div>
+
+              {/* Level */}
+              <div className="w-full flex flex-col items-center mt-3">
+                <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  Level:
+                </div>
+                <div className="text-2xl lg:text-3xl font-black text-[#86efac] drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
+                  {currentLevelIdx + 1}
+                </div>
+              </div>
+
+              {/* Lives */}
+              <div className="w-full flex flex-col items-center mt-3">
+                <div className="text-xl lg:text-2xl text-white font-bold drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                  Lives:
+                </div>
+                <div className="text-2xl lg:text-3xl font-black text-[#86efac] drop-shadow-[0_2px_3px_rgba(0,0,0,0.9)]">
+                  {lives}
+                </div>
+              </div>
+
+              {/* Nain Juggles Combo (if active) */}
+              {engineRef.current.nainsJuggled > 0 && (
+                <div className="w-full flex flex-col items-center mt-2 animate-bounce">
+                  <div className="text-xs text-amber-300 font-bold">Juggles:</div>
+                  <div className="text-lg font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Middle: High Scores Records (from Screenshot 2) */}
+            <div className="my-4 space-y-2.5 text-center border-t border-[#0e441c] pt-3">
+              <div>
+                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Your Highest Score</div>
+                <div className="text-sm font-bold text-[#86efac]">{userHighScore.toLocaleString()}</div>
+              </div>
+
+              <div>
+                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Your Highest Level</div>
+                <div className="text-sm font-bold text-[#86efac]">{userHighestLevel}</div>
+              </div>
+
+              <div>
+                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Highest Score</div>
+                <div className="text-xs text-rose-300 font-bold">yesra</div>
+                <div className="text-sm font-bold text-[#86efac]">{topScore.toLocaleString()}</div>
+              </div>
+
+              <div>
+                <div className="text-[11px] text-[#22c55e]/90 font-bold uppercase tracking-wider">Highest Level</div>
+                <div className="text-xs text-rose-300 font-bold">yesra</div>
+                <div className="text-sm font-bold text-[#86efac]">{topLevel}</div>
+              </div>
+            </div>
+
+            {/* Bottom: Quick In-Game Controls & Magic Chopstick Games watermark */}
+            <div className="flex flex-col gap-2 pt-2 border-t border-[#0e441c]">
+              <div className="grid grid-cols-2 gap-1.5">
+                {gameState === 'playing' ? (
+                  <button 
+                    onClick={() => { setGameState('paused'); stopMusic(); }}
+                    className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                    title="Pause Game"
+                  >
+                    <Pause className="w-3 h-3" /> Pause
+                  </button>
+                ) : gameState === 'paused' ? (
+                  <button 
+                    onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
+                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1"
+                  >
+                    <Play className="w-3 h-3 fill-current" /> Resume
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
+                    className="py-1 px-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-extrabold rounded transition flex items-center justify-center gap-1"
+                  >
+                    <Play className="w-3 h-3 fill-current" /> Play
+                  </button>
+                )}
+
+                <button 
+                  onClick={() => {
+                    const newSound = !options.soundEnabled;
+                    saveOptions({ ...options, soundEnabled: newSound });
+                  }}
+                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                  title="Toggle Sound"
+                >
+                  {options.soundEnabled ? <Volume2 className="w-3 h-3 text-[#4ade80]" /> : <VolumeX className="w-3 h-3 text-rose-400" />}
+                  <span>{options.soundEnabled ? 'Sound' : 'Mute'}</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <button 
+                  onClick={() => setShowLevelSelect(true)}
+                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                >
+                  <Grid className="w-3 h-3" /> Levels
+                </button>
+                <button 
+                  onClick={() => setShowOptions(true)}
+                  className="py-1 px-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded border border-[#166534] transition flex items-center justify-center gap-1"
+                >
+                  <Settings className="w-3 h-3" /> Options
+                </button>
+              </div>
+
+              {/* Classic watermark as seen in original Jardinains screenshot 2 */}
+              <div className="text-center text-[10px] text-[#15803d]/70 font-mono pt-1">
+                www.magicchopstick.com
+              </div>
+            </div>
+
+          </aside>
         </div>
 
-        {/* Footer */}
-        <footer className="text-center text-xs text-slate-500 flex items-center justify-between px-2">
-          <button onClick={() => setShowAbout(true)} className="hover:text-slate-300 transition flex items-center gap-1">
-            <Info className="w-4 h-4" /> About Jardinains Remake
+        {/* Small bottom bar */}
+        <footer className="w-full text-center text-xs text-slate-500 flex items-center justify-between px-2 pt-2">
+          <button onClick={() => setShowAbout(true)} className="hover:text-emerald-400 transition flex items-center gap-1">
+            <Info className="w-3.5 h-3.5" /> About Jardinains Remake
           </button>
-          <span className="font-mono">v2.0 HTML5</span>
+          <span className="font-['Sniglet'] text-rose-400/80 flex items-center gap-1">
+            <Heart className="w-3 h-3 fill-rose-500 text-rose-500" /> with love for yesra
+          </span>
+          <span className="font-mono text-[11px]">1,000 Levels</span>
         </footer>
+
       </div>
 
       {/* Modals */}

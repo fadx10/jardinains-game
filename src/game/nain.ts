@@ -1,5 +1,6 @@
 import { Nain, Brick, Projectile, PowerUp, Particle, FloatingText } from './types';
 import { SoundEffect } from './audio';
+import { createPowerUp } from './powerups';
 
 export const NAIN_WIDTH = 26;
 export const NAIN_HEIGHT = 30;
@@ -157,6 +158,115 @@ export function updateJardinains(
     // Cooldown timers
     if (nain.dodgeCooldown && nain.dodgeCooldown > 0) {
       nain.dodgeCooldown -= 1;
+    }
+    if (nain.hitCooldown && nain.hitCooldown > 0) {
+      nain.hitCooldown -= 1;
+    }
+
+    // Direct Ball Collision with Jardinain!
+    // Hitting a jardinain knocks him off his platform / into the air AND awards a BIG REWARD!
+    if ((!nain.hitCooldown || nain.hitCooldown === 0) && nain.state !== 'splat' && nain.state !== 'poof') {
+      for (const b of balls) {
+        // Circle-to-AABB collision check
+        const closestX = Math.max(nain.x, Math.min(b.x, nain.x + nain.w));
+        const closestY = Math.max(nain.y, Math.min(b.y, nain.y + nain.h));
+        const dx = b.x - closestX;
+        const dy = b.y - closestY;
+        const hitDist = b.radius + 3;
+
+        if (dx * dx + dy * dy <= hitDist * hitDist) {
+          // Ball made direct contact with this Jardinain!
+          nain.hitCooldown = 20; // Brief cooldown to prevent multi-hit overlap on adjacent frames
+
+          // 1. Deflect/ricochet the ball (unless it's a piercing fireball)
+          if (!('isFireball' in b && b.isFireball)) {
+            if (Math.abs(dx) > Math.abs(dy)) {
+              b.vx = b.x < nain.x + nain.w / 2 ? -Math.abs(b.vx) : Math.abs(b.vx);
+            } else {
+              b.vy = b.y < nain.y + nain.h / 2 ? -Math.abs(b.vy) : Math.abs(b.vy);
+            }
+          }
+
+          // 2. Knock the gnome off into the air!
+          nain.isParachuting = false;
+          nain.standingOnBrickId = null;
+          nain.state = 'falling';
+          // Upward launch velocity with comical spin
+          nain.vy = -Math.max(6.0, Math.abs(b.vy) * 0.8 + 2.5);
+          nain.vx = (b.vx * 0.55) + (Math.random() - 0.5) * 4;
+          nain.bounceCount = (nain.bounceCount || 0) + 1;
+
+          // Audio: comical hit bounce + reward chime
+          playSound('nain_bounce', { pitchMult: 1.2 });
+          playSound('bonus_brick');
+
+          // Comical taunt
+          const HIT_TAUNTS = ['OUCH!', 'MY HAT!', 'WHOA!', 'DIRECT HIT!', 'HEY!', 'OWW!', 'WAAAH!'];
+          nain.tauntText = HIT_TAUNTS[Math.floor(Math.random() * HIT_TAUNTS.length)];
+          setTimeout(() => {
+            if (nain.tauntText && HIT_TAUNTS.includes(nain.tauntText)) {
+              nain.tauntText = null;
+            }
+          }, 1400);
+
+          // 3. Huge Score Reward based on Gnome Hat Tier
+          let hitScore = 500;
+          if (nain.hatType === 'red') hitScore = 500;
+          else if (nain.hatType === 'blue') hitScore = 750;
+          else if (nain.hatType === 'green') hitScore = 1000;
+          else if (nain.hatType === 'gold') hitScore = 2000;
+
+          onScoreGain(hitScore);
+
+          // 4. GUARANTEED BIG REWARD DROP! (Drops directly from the hit gnome)
+          const bonusRewardTypes: PowerUp['type'][] = [
+            'bonus_points',
+            'multiball',
+            'laser',
+            'fireball',
+            'expand',
+            'shield',
+            'heart',
+            'slow_ball',
+            'sticky',
+          ];
+          const dropsCount = nain.hatType === 'gold' ? 2 : 1;
+          for (let d = 0; d < dropsCount; d++) {
+            const dropType = bonusRewardTypes[Math.floor(Math.random() * bonusRewardTypes.length)];
+            const offsetX = (d - (dropsCount - 1) / 2) * 22;
+            powerups.push(createPowerUp(nain.x + nain.w / 2 + offsetX, nain.y + nain.h / 2, dropType));
+          }
+
+          // 5. Floating text announcement
+          floatingTexts.push({
+            text: `🎯 NAIN HIT! +${hitScore}`,
+            x: nain.x + nain.w / 2,
+            y: nain.y - 18,
+            color: '#fde047',
+            alpha: 1,
+            vy: -1.8,
+          });
+
+          // 6. Radiant star explosion FX
+          for (let p = 0; p < 16; p++) {
+            const angle = (p / 16) * Math.PI * 2;
+            const speed = Math.random() * 4.5 + 2.5;
+            particles.push({
+              x: nain.x + nain.w / 2,
+              y: nain.y + nain.h / 2,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed - 1.2,
+              radius: Math.random() * 4 + 2,
+              color: nain.color,
+              alpha: 1,
+              decay: 0.035,
+              shape: Math.random() < 0.6 ? 'star' : 'circle',
+            });
+          }
+
+          break; // One ball hit per frame for this gnome
+        }
+      }
     }
 
     // State 1: Parachuting in from the sky
@@ -488,29 +598,22 @@ export function updateJardinains(
           });
         }
 
-        // Guaranteed powerup drop every 2nd or 3rd bounce!
-        if (nain.bounceCount % 2 === 0 || nain.hatType === 'gold') {
-          const powerTypes: PowerUp['type'][] = [
-            'multiball',
-            'laser',
-            'fireball',
-            'expand',
-            'shield',
-            'heart',
-            'slow_ball',
-            'sticky',
-            'bonus_points',
-          ];
-          powerups.push({
-            id: `pw_j_${Date.now()}_${Math.random()}`,
-            x: nain.x,
-            y: paddleY - 25,
-            vy: -2.8,
-            type: powerTypes[Math.floor(Math.random() * powerTypes.length)],
-            w: 26,
-            h: 18,
-          });
-        }
+        // Guaranteed big powerup drop on juggle bounce!
+        const powerTypes: PowerUp['type'][] = [
+          'bonus_points',
+          'multiball',
+          'laser',
+          'fireball',
+          'expand',
+          'shield',
+          'heart',
+          'slow_ball',
+          'sticky',
+        ];
+        const chosenType = powerTypes[Math.floor(Math.random() * powerTypes.length)];
+        const newPw = createPowerUp(nain.x + nain.w / 2, paddleY - 25, chosenType);
+        newPw.vy = -2.8; // Pop upward from paddle
+        powerups.push(newPw);
       }
 
       // Bottom Splat

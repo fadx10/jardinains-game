@@ -25,6 +25,14 @@ DirectoryIndex dist/index.html index.html
   RewriteEngine On
   RewriteBase /jardinains/
 
+  # Ensure trailing slash for directory requests so relative links work properly
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_URI} !(.*)/$
+  RewriteRule ^(.*)$ /jardinains/$1/ [L,R=301]
+
+  # Allow direct access to the dist/ directory without interference
+  RewriteRule ^dist(/.*)?$ - [L]
+
   # Block direct browser requests to raw TypeScript / source files
   RewriteRule ^src/.*$ dist/index.html [L]
 

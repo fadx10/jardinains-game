@@ -57,6 +57,7 @@ export interface Nain {
   walkCycle: number;
   isParachuting?: boolean;
   dodgeCooldown?: number;
+  hitCooldown?: number;
 }
 
 export type PowerUpType =

@@ -142,16 +142,16 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
   },
   bonus_points: {
     type: 'bonus_points',
-    label: 'BONUS POINTS',
-    shortName: '+500 PTS',
+    label: '1,000 BONUS POINTS',
+    shortName: '+1000 PTS',
     icon: '⭐',
     symbol: '★',
     color: '#eab308', // Radiant star gold
-    glowColor: '#facc15',
+    glowColor: '#fde047',
     durationMs: 0, // Instant
-    announcement: '+500 BONUS POINTS! ⭐',
+    announcement: '+1,000 BONUS POINTS! ⭐',
     sound: 'bonus_brick',
-    description: 'Instantly grants 500 bonus points to your score',
+    description: 'Instantly grants 1,000 bonus points to your score',
   },
   shield: {
     type: 'shield',
@@ -201,12 +201,12 @@ export function createPowerUp(x: number, y: number, type?: PowerUpType): PowerUp
   const chosenType = type || getRandomPowerUpType();
   return {
     id: `pw_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-    x: x - 13,
+    x: x - 22,
     y,
-    w: 26,
-    h: 18,
+    w: 44,
+    h: 26,
     type: chosenType,
-    vy: 2.3 + Math.random() * 0.4, // Consistent, comfortable 2.3-2.7 px/frame fall speed
+    vy: 2.2 + Math.random() * 0.35, // Consistent comfortable fall speed
     animFrame: Math.random() * 100,
   };
 }
@@ -218,90 +218,113 @@ export function drawPowerUp(ctx: CanvasRenderingContext2D, powerup: PowerUp) {
   powerup.animFrame = frame;
 
   // Gentle hovering bob & slight tilt
-  const bobY = Math.sin(frame * 0.08) * 1.5;
-  const tilt = Math.sin(frame * 0.06) * 0.08;
+  const bobY = Math.sin(frame * 0.09) * 2;
+  const tilt = Math.sin(frame * 0.07) * 0.09;
 
   const x = powerup.x;
   const y = powerup.y + bobY;
-  const w = powerup.w;
-  const h = powerup.h;
+  const w = powerup.w || 44;
+  const h = powerup.h || 26;
 
   ctx.save();
   ctx.translate(x + w / 2, y + h / 2);
   ctx.rotate(tilt);
 
-  // Outer ambient glow
+  // Outer ambient pulsing glow
+  const glowPulse = Math.sin(frame * 0.12) * 3 + 12;
   ctx.shadowColor = cfg.glowColor;
-  ctx.shadowBlur = cfg.isNegative ? 12 : 8;
+  ctx.shadowBlur = cfg.isNegative ? glowPulse + 4 : glowPulse;
 
-  // Pill Capsule Outer Base
+  // Pill Capsule Outer Base (Two-tone beveled pill)
   const grad = ctx.createLinearGradient(0, -h / 2, 0, h / 2);
   grad.addColorStop(0, '#ffffff');
-  grad.addColorStop(0.3, cfg.color);
-  grad.addColorStop(1, '#0f172a');
+  grad.addColorStop(0.25, cfg.color);
+  grad.addColorStop(0.85, '#0f172a');
+  grad.addColorStop(1, '#020617');
 
   ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.roundRect(-w / 2, -h / 2, w, h, 8);
+  ctx.roundRect(-w / 2, -h / 2, w, h, 13);
   ctx.fill();
 
-  // Highlight Border
+  // Highlight Border with glow
   ctx.strokeStyle = cfg.isNegative ? '#fca5a5' : '#ffffff';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Glass Specular Sheen (top half)
+  // Glass Specular Sheen (top half glossy curve)
   ctx.shadowBlur = 0;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  const sheenGrad = ctx.createLinearGradient(0, -h / 2, 0, 0);
+  sheenGrad.addColorStop(0, 'rgba(255, 255, 255, 0.7)');
+  sheenGrad.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+  ctx.fillStyle = sheenGrad;
   ctx.beginPath();
-  ctx.roundRect(-w / 2 + 2, -h / 2 + 1.5, w - 4, (h - 3) / 2, [6, 6, 2, 2]);
+  ctx.roundRect(-w / 2 + 2.5, -h / 2 + 2, w - 5, (h - 4) / 2, [10, 10, 3, 3]);
   ctx.fill();
 
-  // Symbol / Icon rendering
-  ctx.fillStyle = cfg.isNegative ? '#fee2e2' : '#ffffff';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.shadowBlur = 3;
+  // Inner accent line
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect(-w / 2 + 3, -h / 2 + 2.5, w - 6, h - 5, 10);
+  ctx.stroke();
+
+  // High-contrast symbol & bold text label
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+  ctx.shadowBlur = 4;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
   if (powerup.type === 'expand') {
+    ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 12px monospace, sans-serif';
-    ctx.fillText('↔', 0, 0.5);
+    ctx.fillText('↔ WIDE', 0, 0.5);
   } else if (powerup.type === 'shrink') {
-    ctx.font = 'bold 10px monospace, sans-serif';
-    ctx.fillText('↔⁻', 0, 0.5);
+    ctx.fillStyle = '#fee2e2';
+    ctx.font = 'bold 11px monospace, sans-serif';
+    ctx.fillText('↔⁻ MINI', 0, 0.5);
   } else if (powerup.type === 'multiball') {
-    // 3 mini spheres
+    // 3 mini spheres + text
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.arc(-5, 0, 2.5, 0, Math.PI * 2);
-    ctx.arc(0, -2, 2.5, 0, Math.PI * 2);
-    ctx.arc(5, 0, 2.5, 0, Math.PI * 2);
+    ctx.arc(-11, 0, 3.5, 0, Math.PI * 2);
+    ctx.arc(-4, -2, 3.5, 0, Math.PI * 2);
+    ctx.arc(3, 0, 3.5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.font = 'bold 10px system-ui, sans-serif';
+    ctx.fillText('x3', 13, 0.5);
   } else if (powerup.type === 'slow_ball') {
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('❄', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.fillText('❄ SLOW', 0, 0.5);
   } else if (powerup.type === 'fast_ball') {
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('⚡', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.fillText('⚡ FAST', 0, 0.5);
   } else if (powerup.type === 'heart') {
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('♥', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.fillText('♥ LIFE', 0, 0.5);
   } else if (powerup.type === 'sticky') {
+    ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('🧲', 0, 0.5);
+    ctx.fillText('🧲 CATCH', 0, 0.5);
   } else if (powerup.type === 'laser') {
-    ctx.font = 'bold 10px system-ui, sans-serif';
-    ctx.fillText('🔫', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.fillText('⚡ LASER', 0, 0.5);
   } else if (powerup.type === 'fireball') {
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('🔥', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.fillText('🔥 FIRE', 0, 0.5);
   } else if (powerup.type === 'bonus_points') {
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillText('★', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.fillText('★ 1000 ★', 0, 0.5);
   } else if (powerup.type === 'shield') {
-    ctx.font = 'bold 10px system-ui, sans-serif';
-    ctx.fillText('🛡️', 0, 0.5);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    ctx.fillText('🛡️ SHIELD', 0, 0.5);
   }
 
   ctx.restore();
@@ -315,19 +338,19 @@ export function spawnPowerUpCatchFX(
   particles: Particle[]
 ) {
   // Radiant expanding ring particles
-  for (let i = 0; i < 14; i++) {
-    const angle = (i / 14) * Math.PI * 2;
-    const speed = Math.random() * 3 + 2;
+  for (let i = 0; i < 20; i++) {
+    const angle = (i / 20) * Math.PI * 2;
+    const speed = Math.random() * 4 + 3;
     particles.push({
       x,
       y,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 1,
-      radius: Math.random() * 3 + 1.5,
+      vy: Math.sin(angle) * speed - 1.5,
+      radius: Math.random() * 4 + 2,
       color,
       alpha: 1,
-      decay: 0.035,
-      shape: Math.random() < 0.4 ? 'star' : 'circle',
+      decay: 0.03,
+      shape: Math.random() < 0.5 ? 'star' : 'circle',
     });
   }
 }
@@ -371,6 +394,11 @@ export function applyPowerUpPickup(
     vy: -1.6,
   });
 
+  // Score reward for catching a positive powerup
+  if (!cfg.isNegative) {
+    onScoreGain(150);
+  }
+
   // Handle Conflicting Effects (Newest replaces previous)
   if (cfg.conflictsWith) {
     for (const conflictType of cfg.conflictsWith) {
@@ -398,7 +426,7 @@ export function applyPowerUpPickup(
   // Execute Specific Effect Logic
   switch (powerup.type) {
     case 'expand': {
-      game.paddleWidth = Math.min(200, Math.round(game.paddleDefaultWidth * 1.55));
+      game.paddleWidth = Math.min(220, Math.round(game.paddleDefaultWidth * 1.85));
       break;
     }
     case 'shrink': {
@@ -474,7 +502,7 @@ export function applyPowerUpPickup(
       break;
     }
     case 'bonus_points': {
-      onScoreGain(500);
+      onScoreGain(1000);
       break;
     }
     case 'shield': {

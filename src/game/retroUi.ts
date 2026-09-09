@@ -11,22 +11,23 @@ import { Brick, Ball } from './types';
  */
 
 /**
- * Draws the classic stone arcade border walls (top, left, and right)
+ * Draws the classic Jardinains playfield border frame (thin crisp arcade outline)
  */
 export function drawArcadeBorder(
   ctx: CanvasRenderingContext2D,
   canvasWidth: number,
   canvasHeight: number,
-  wallThickness: number = 12
+  wallThickness: number = 8
 ) {
-  // 1. Left Wall
-  drawStoneWallSegment(ctx, 0, 0, wallThickness, canvasHeight, 'vertical');
+  // Classic Jardinains playfield bounding frame
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(wallThickness / 2, wallThickness / 2, canvasWidth - wallThickness, canvasHeight - wallThickness);
 
-  // 2. Right Wall
-  drawStoneWallSegment(ctx, canvasWidth - wallThickness, 0, wallThickness, canvasHeight, 'vertical');
-
-  // 3. Top Wall
-  drawStoneWallSegment(ctx, 0, 0, canvasWidth, wallThickness, 'horizontal');
+  // Subtle outer edge shadow
+  ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(wallThickness / 2 - 1, wallThickness / 2 - 1, canvasWidth - wallThickness + 2, canvasHeight - wallThickness + 2);
 }
 
 function drawStoneWallSegment(
@@ -151,7 +152,29 @@ export function drawClassicBeveledBrick(ctx: CanvasRenderingContext2D, b: Brick)
   ctx.fillRect(x, y + h - 2, w, 2);
   ctx.fillRect(x + w - 2, y, 2, h);
 
-  // 5. Crack branches if damaged multi-hit brick
+  // 5. Authentic Jardinains Wavy Horizontal Squiggle Lines (from original game)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  const yWave1 = y + h * 0.36;
+  const yWave2 = y + h * 0.70;
+  ctx.moveTo(x + 4, yWave1);
+  ctx.quadraticCurveTo(x + w * 0.25, yWave1 - 2, x + w * 0.5, yWave1);
+  ctx.quadraticCurveTo(x + w * 0.75, yWave1 + 2, x + w - 4, yWave1);
+  ctx.moveTo(x + 4, yWave2);
+  ctx.quadraticCurveTo(x + w * 0.25, yWave2 - 2, x + w * 0.5, yWave2);
+  ctx.quadraticCurveTo(x + w * 0.75, yWave2 + 2, x + w - 4, yWave2);
+  ctx.stroke();
+
+  // Subtle dark wave accent for 3D depth
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+  ctx.beginPath();
+  ctx.moveTo(x + 4, yWave1 + 1);
+  ctx.quadraticCurveTo(x + w * 0.25, yWave1 - 1, x + w * 0.5, yWave1 + 1);
+  ctx.quadraticCurveTo(x + w * 0.75, yWave1 + 3, x + w - 4, yWave1 + 1);
+  ctx.stroke();
+
+  // 6. Crack branches if damaged multi-hit brick
   if (maxHp > 1 && hp < maxHp) {
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
     ctx.lineWidth = 1.5;
@@ -198,7 +221,7 @@ export function drawClassicPaddle(
   const bodyX = paddleX + capWidth;
   const bodyW = paddleWidth - capWidth * 2;
 
-  // 1. Red Metallic Cylindrical Body (or Sticky Green)
+  // 1. Metallic Cylindrical Body (Silver as seen in original Jardinains screenshot, or Sticky Green)
   const bodyGrad = ctx.createLinearGradient(0, paddleY, 0, paddleY + paddleHeight);
   if (sticky) {
     bodyGrad.addColorStop(0, '#86efac');
@@ -206,11 +229,12 @@ export function drawClassicPaddle(
     bodyGrad.addColorStop(0.6, '#16a34a');
     bodyGrad.addColorStop(1, '#14532d');
   } else {
-    bodyGrad.addColorStop(0, '#fca5a5');
-    bodyGrad.addColorStop(0.2, '#ef4444');
-    bodyGrad.addColorStop(0.6, '#dc2626');
-    bodyGrad.addColorStop(0.85, '#991b1b');
-    bodyGrad.addColorStop(1, '#450a0a');
+    // Authentic silver metallic capsule paddle from original Jardinains screenshot
+    bodyGrad.addColorStop(0, '#ffffff');
+    bodyGrad.addColorStop(0.2, '#e2e8f0');
+    bodyGrad.addColorStop(0.55, '#94a3b8');
+    bodyGrad.addColorStop(0.85, '#64748b');
+    bodyGrad.addColorStop(1, '#334155');
   }
   ctx.fillStyle = bodyGrad;
   ctx.fillRect(bodyX, paddleY, bodyW, paddleHeight);
