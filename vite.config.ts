@@ -70,6 +70,10 @@ export default defineConfig(() => {
     build: {
       outDir: 'dist',
       rollupOptions: {
+        input: {
+          app: path.resolve(__dirname, 'src/main.tsx'),
+          index: path.resolve(__dirname, 'index.html'),
+        },
         output: {
           entryFileNames: 'assets/app.js',
           chunkFileNames: 'assets/[name].js',
