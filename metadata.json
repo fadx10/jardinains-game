@@ -1,0 +1,6 @@
+{
+  "name": "Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online",
+  "description": "Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

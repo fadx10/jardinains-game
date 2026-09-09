@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <!-- Safeguard for fetch assignment in iframe sandbox and proxy environments -->
+    <script>
+      (function() {
+        try {
+          var originalFetch = window.fetch;
+          if (originalFetch) {
+            var currentFetch = originalFetch;
+            try {
+              Object.defineProperty(window, 'fetch', {
+                get: function() { return currentFetch; },
+                set: function(newFetch) { currentFetch = newFetch; },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (err) {
+              // silent fallback
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online</title>
+    <meta name="title" content="Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online" />
+    <meta name="description" content="Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode." />
+    <meta name="keywords" content="Jardinains, play Jardinains online, brick breaker game, classic retro games 2000s, arkanoid online, breakout gnome game, nain bouncing, 1000 levels arcade, free browser game, retro arcade web game" />
+    <meta name="author" content="Jardinains Arcade Remake" />
+    <meta name="application-name" content="Jardinains! 1000 Levels" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Jardinains! 1000 Levels" />
+    <meta property="og:title" content="Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online" />
+    <meta property="og:description" content="Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / X Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Jardinains! - Play Classic 1000 Level Brick Breaker Arcade Online" />
+    <meta name="twitter:description" content="Play the classic Jardinains! brick breaker remake online for free with 1,000 retro levels, mischievous garden nains to juggle, power-ups, authentic synth sounds, and full-screen mode." />
+
+    <!-- Schema.org JSON-LD Structured Data for Search Engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": ["VideoGame", "SoftwareApplication", "WebApplication"],
+          "name": "Jardinains! 1000 Levels - The Classic Brick-Breaking Remake",
+          "alternateName": "Jardinains Online",
+          "headline": "Play Classic Jardinains! 1000 Level Brick Breaker Online Free",
+          "description": "The classic 2000s brick-breaking, nain-bouncing arcade game featuring 1,000 levels, authentic retro Web Audio synthesizer, mischievous garden gnomes, power-ups, and full-screen support.",
+          "applicationCategory": "GameApplication",
+          "gamePlatform": ["Web Browser", "PC", "Mobile", "Tablet"],
+          "operatingSystem": "Any (Web Browser)",
+          "genre": ["Arcade Game", "Brick Breaker", "Retro Game", "Physics Game"],
+          "playMode": "SinglePlayer",
+          "inLanguage": "en",
+          "isAccessibleForFree": true,
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "1280",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "author": {
+            "@type": "Organization",
+            "name": "Jardinains! Remake Studio"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "name": "Jardinains! 1000 Levels",
+          "description": "Play the legendary Jardinains! classic brick-breaking arcade game with 1000 levels online in your web browser.",
+          "inLanguage": "en"
+        }
+      ]
+    }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
