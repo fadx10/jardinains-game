@@ -71,13 +71,13 @@ export default defineConfig(() => {
       outDir: 'dist',
       rollupOptions: {
         input: {
-          app: path.resolve(__dirname, 'src/main.tsx'),
+          
           index: path.resolve(__dirname, 'index.html'),
         },
         output: {
-          entryFileNames: 'assets/app.js',
-          chunkFileNames: 'assets/[name].js',
-          assetFileNames: 'assets/[name].[ext]',
+          entryFileNames: 'assets/app-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
         },
       },
     },
