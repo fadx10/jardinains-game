@@ -103,26 +103,23 @@
     <div id="root"></div>
     <!-- Vite entry point for dev server and build tool -->
     <script type="module" src="./src/main.tsx"></script>
-    <!-- Standalone browser fallback when deployed directly to Apache root without build step -->
-    <script>
+    <!-- Standalone browser loader when index.html is served directly on Apache / Hostinger without Vite dev server -->
+    <script type="module">
       (function() {
-        if (typeof window !== 'undefined' && window.location.port !== '3000') {
-          // If the browser cannot execute raw .tsx (standard Apache / Hostinger static host)
-          window.addEventListener('error', function(e) {
-            if (e.filename && (e.filename.endsWith('.tsx') || e.filename.endsWith('.ts'))) {
-              if (!document.getElementById('jardinains-app-bundle')) {
-                var s = document.createElement('script');
-                s.id = 'jardinains-app-bundle';
-                s.type = 'module';
-                s.src = './assets/app.js';
-                document.body.appendChild(s);
-                var l = document.createElement('link');
-                l.rel = 'stylesheet';
-                l.href = './assets/index.css';
-                document.head.appendChild(l);
-              }
-            }
-          }, true);
+        if (typeof window !== 'undefined' && window.location.port !== '3000' && window.location.hostname !== 'localhost') {
+          // Add production stylesheet if not present
+          if (!document.getElementById('jardinains-css')) {
+            var link = document.createElement('link');
+            link.id = 'jardinains-css';
+            link.rel = 'stylesheet';
+            link.href = './assets/index.css';
+            document.head.appendChild(link);
+          }
+          // Load production JavaScript bundle
+          import('./assets/app.js').catch(function() {
+            // Fallback to any hashed bundle if app.js is not yet uploaded
+            import('./assets/index-CgRgEJS-.js').catch(function() {});
+          });
         }
       })();
     </script>
