@@ -936,14 +936,9 @@ export default function App() {
               </h1>
 
               {/* with love for yesra right under Jardinains */}
-              <div className="text-center text-xs font-bold text-rose-300 flex items-center justify-center gap-1 mt-0.5 tracking-wide">
+              <div className="text-center text-xs font-bold text-rose-300 flex items-center justify-center gap-1 mt-0.5 mb-2 tracking-wide">
                 <Heart className="w-3 h-3 fill-rose-500 text-rose-500 animate-pulse inline-block" />
                 <span>with love for yesra</span>
-              </div>
-
-              {/* Player Name */}
-              <div className="text-sm font-bold text-[#86efac] mt-2 mb-2 tracking-wide">
-                yesra
               </div>
 
               {/* Score */}

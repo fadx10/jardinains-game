@@ -20,18 +20,6 @@
             }
           }
         } catch (e) {}
-
-        // Fallback for static hosting (Apache/cPanel) if root index.html is served directly
-        try {
-          var isDevHost = window.location.hostname === 'localhost' || 
-                         window.location.hostname === '127.0.0.1' || 
-                         window.location.hostname.indexOf('run.app') !== -1;
-          if (!isDevHost && window.location.pathname.indexOf('/dist') === -1) {
-            var basePath = window.location.pathname.replace(/\/index\.html$/, '');
-            if (!basePath.endsWith('/')) basePath += '/';
-            window.location.replace(basePath + 'dist/' + window.location.search + window.location.hash);
-          }
-        } catch (e) {}
       })();
     </script>
     <meta charset="UTF-8" />
