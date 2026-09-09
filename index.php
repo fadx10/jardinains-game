@@ -13,6 +13,16 @@ header('X-Content-Type-Options: nosniff');
 
 $distPath = __DIR__ . '/dist/index.html';
 
+// If running in flat-deployed production (where dist/ contents are copied directly to web root)
+if (!file_exists($distPath) && file_exists(__DIR__ . '/index.html')) {
+    // Verify we aren't loading the raw uncompiled development index.html template
+    // The raw development template references the main typescript source file
+    $content = @file_get_contents(__DIR__ . '/index.html');
+    if ($content !== false && strpos($content, 'src/main.tsx') === false) {
+        $distPath = __DIR__ . '/index.html';
+    }
+}
+
 /**
  * Streams the file content using multiple fallback methods
  * to bypass safe_mode/disable_functions restrictions in php.ini
