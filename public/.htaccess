@@ -1,0 +1,31 @@
+# ----------------------------------------------------------------------
+# Jardinains! 1000 Level Arcade - dist/ directory .htaccess
+# ----------------------------------------------------------------------
+
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType image/x-icon .ico
+  AddType application/wasm .wasm
+  AddType application/json .json
+  AddType audio/mpeg .mp3
+  AddType audio/wav .wav
+  AddType audio/ogg .ogg
+  AddType font/woff .woff
+  AddType font/woff2 .woff2
+</IfModule>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /jardinains/dist/
+
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . index.html [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+</IfModule>

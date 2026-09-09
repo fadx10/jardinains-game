@@ -1,0 +1,60 @@
+# ----------------------------------------------------------------------
+# Jardinains! 1000 Level Arcade - Hostinger Apache / Shared Hosting Config
+# ----------------------------------------------------------------------
+
+# 1. Set correct MIME Types for JavaScript Modules, CSS, and Game Assets
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType image/x-icon .ico
+  AddType application/wasm .wasm
+  AddType application/json .json
+  AddType audio/mpeg .mp3
+  AddType audio/wav .wav
+  AddType audio/ogg .ogg
+  AddType font/woff .woff
+  AddType font/woff2 .woff2
+</IfModule>
+
+# 2. Tell Apache to serve the compiled production build from dist/
+DirectoryIndex dist/index.html index.html
+
+# 3. Rewrite rules for Subdirectory hosting (/jardinains/)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /jardinains/
+
+  # Block direct browser requests to raw TypeScript / source files
+  RewriteRule ^src/.*$ dist/index.html [L]
+
+  # Route root and index.html to dist/index.html
+  RewriteRule ^$ dist/index.html [L]
+  RewriteRule ^index\.html$ dist/index.html [L]
+
+  # Route asset requests to dist/assets/
+  RewriteCond %{REQUEST_URI} !^/jardinains/dist/
+  RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
+
+  # SPA Fallback: Send any missing routes to dist/index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !^/jardinains/dist/
+  RewriteRule . dist/index.html [L]
+</IfModule>
+
+# 4. Security & Caching Headers
+<IfModule mod_headers.c>
+  # Enforce strict MIME checking safely
+  Header set X-Content-Type-Options "nosniff"
+
+  # Cache compiled JS and CSS assets safely
+  <FilesMatch "\.(js|css|wasm|woff2|png|jpg|svg)$">
+    Header set Cache-Control "max-age=31536000, public, immutable"
+  </FilesMatch>
+
+  # Do not cache HTML to ensure instant updates
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
