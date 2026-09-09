@@ -197,7 +197,7 @@ export function updateJardinains(
           nain.bounceCount = (nain.bounceCount || 0) + 1;
 
           // Audio: comical hit bounce + reward chime
-          playSound('nain_bounce', { pitchMult: 1.2 });
+          playSound('nain_hit', { pitchMult: 1.2 });
           playSound('bonus_brick');
 
           // Comical taunt
@@ -623,6 +623,7 @@ export function updateJardinains(
         nain.vx = 0;
         nain.vy = 0;
         playSound('splat');
+        if (Math.random() > 0.5) playSound('nain_taunt');
         nain.tauntText = NAIN_TAUNTS.splat[Math.floor(Math.random() * NAIN_TAUNTS.splat.length)];
 
         // Poof timeout

@@ -12,6 +12,7 @@ export type SoundEffect =
   | 'nain_fall'
   | 'nain_bounce'
   | 'nain_smash'
+  | 'nain_taunt'
   | 'splat'
   | 'poof'
   | 'freeze'
@@ -580,6 +581,24 @@ class SoundEngine {
           gain.connect(this.masterGain);
           osc.start(now);
           osc.stop(now + 0.15);
+          break;
+        }
+
+        // Nain Taunt (randomly when bottom reached)
+        case 'nain_taunt': {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(600 * pitch, now);
+          osc.frequency.linearRampToValueAtTime(800 * pitch, now + 0.05);
+          osc.frequency.linearRampToValueAtTime(650 * pitch, now + 0.1);
+          osc.frequency.linearRampToValueAtTime(850 * pitch, now + 0.15);
+          gain.gain.setValueAtTime(0.18, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+          osc.connect(gain);
+          gain.connect(this.masterGain);
+          osc.start(now);
+          osc.stop(now + 0.2);
           break;
         }
 

@@ -589,7 +589,7 @@ export default function App() {
 
             const hitScore = nain.hatType === 'gold' ? 2000 : nain.hatType === 'green' ? 1000 : 600;
             setScore(s => s + hitScore);
-            playSound('nain_bounce', { pitchMult: 1.25 });
+            playSound('nain_hit', { pitchMult: 1.25 });
             playSound('bonus_brick');
 
             // Drop guaranteed bonus reward!
