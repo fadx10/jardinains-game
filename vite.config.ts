@@ -1,5 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { viteSingleFile } from 'vite-plugin-singlefile';
 import fs from 'fs';
 import path from 'path';
 import {defineConfig, Plugin} from 'vite';
@@ -81,7 +82,7 @@ export default defineConfig(() => {
         },
       },
     },
-    plugins: [react(), tailwindcss(), aistudioMediaPlugin()],
+    plugins: [react(), tailwindcss(), aistudioMediaPlugin(), viteSingleFile()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
