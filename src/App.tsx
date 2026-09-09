@@ -846,10 +846,10 @@ export default function App() {
                   <Heart className="w-3 h-3 fill-rose-500 text-rose-500 inline" />
                 </div>
               </div>
-              {engineRef.current.nainsJuggled > 0 ? (
+              {(engineRef.current?.nainsJuggled || 0) > 0 ? (
                 <div className="bg-[#451a03] px-2 py-1 rounded-lg border border-amber-500/40 animate-pulse">
                   <div className="text-[10px] text-amber-300 font-bold">JUGGLES</div>
-                  <div className="text-sm sm:text-base font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
+                  <div className="text-sm sm:text-base font-black text-amber-400">x{engineRef.current?.nainsJuggled}</div>
                 </div>
               ) : (
                 <div className="hidden sm:block bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
@@ -887,9 +887,9 @@ export default function App() {
                     Lives: <span className="font-mono text-white text-sm">{lives}</span>
                     <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500 inline" />
                   </span>
-                  {engineRef.current.nainsJuggled > 0 && (
+                  {(engineRef.current?.nainsJuggled || 0) > 0 && (
                     <span className="text-amber-300 font-extrabold animate-pulse shrink-0">
-                      Juggles: x{engineRef.current.nainsJuggled}
+                      Juggles: x{engineRef.current?.nainsJuggled}
                     </span>
                   )}
                 </div>
@@ -1171,10 +1171,10 @@ export default function App() {
                 </div>
 
                 {/* Nain Juggles Combo (if active) */}
-                {engineRef.current.nainsJuggled > 0 && (
+                {(engineRef.current?.nainsJuggled || 0) > 0 && (
                   <div className="w-full flex flex-col items-center mt-2 animate-bounce">
                     <div className="text-xs text-amber-300 font-bold">Juggles:</div>
-                    <div className="text-lg font-black text-amber-400">x{engineRef.current.nainsJuggled}</div>
+                    <div className="text-lg font-black text-amber-400">x{engineRef.current?.nainsJuggled}</div>
                   </div>
                 )}
               </div>
