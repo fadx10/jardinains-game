@@ -35,6 +35,11 @@ DirectoryIndex index.php dist/index.html index.html
   RewriteRule ^$ index.php [L]
   RewriteRule ^index\.html$ index.php [L]
 
+  # Rewrite requests for compiled assets relative to root back to the dist/ folder
+  # (e.g. assets/favicon-BPtqrHQ4.svg -> dist/assets/favicon-BPtqrHQ4.svg)
+  RewriteCond %{DOCUMENT_ROOT}/dist/$0 -f
+  RewriteRule ^assets/.*$ dist/$0 [L]
+
   # Serve existing static assets directly (svg, png, json, ico, css, js)
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
