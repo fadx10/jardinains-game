@@ -17,7 +17,7 @@
   AddType font/woff2 .woff2
 </IfModule>
 
-# 2. Tell Apache to serve the compiled production build from dist/
+# 2. Directory Index priority (dist/index.html if present, else root index.html)
 DirectoryIndex dist/index.html index.html
 
 # 3. Rewrite rules for Subdirectory hosting (/jardinains/)
@@ -30,25 +30,32 @@ DirectoryIndex dist/index.html index.html
   RewriteCond %{REQUEST_URI} !(.*)/$
   RewriteRule ^(.*)$ /jardinains/$1/ [L,R=301]
 
-  # Allow direct access to the dist/ directory without interference
-  RewriteRule ^dist(/.*)?$ - [L]
+  # Allow direct access to existing files and directories
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
 
-  # Block direct browser requests to raw TypeScript / source files
-  RewriteRule ^src/.*$ dist/index.html [L]
-
-  # Route root and index.html to dist/index.html
+  # If dist/index.html exists on disk, route requests there
+  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/index.html -f
   RewriteRule ^$ dist/index.html [L]
+
+  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/index.html -f
   RewriteRule ^index\.html$ dist/index.html [L]
 
-  # Route asset requests to dist/assets/
-  RewriteCond %{REQUEST_URI} !^/jardinains/dist/
+  # If dist/assets/ exists on disk, route assets requests there
+  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/assets/$1 -f
   RewriteRule ^assets/(.*)$ dist/assets/$1 [L]
 
-  # SPA Fallback: Send any missing routes to dist/index.html
+  # SPA Fallback when dist/index.html exists
+  RewriteCond %{DOCUMENT_ROOT}/jardinains/dist/index.html -f
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_URI} !^/jardinains/dist/
   RewriteRule . dist/index.html [L]
+
+  # Fallback to root index.html if dist/ is not yet deployed
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . index.html [L]
 </IfModule>
 
 # 4. Security & Caching Headers
