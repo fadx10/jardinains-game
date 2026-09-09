@@ -14,7 +14,6 @@ import HowToPlayModal from './components/HowToPlayModal';
 import LevelSelectModal from './components/LevelSelectModal';
 import OptionsModal from './components/OptionsModal';
 import QuitModal from './components/QuitModal';
-import PowerUpTimers from './components/PowerUpTimers';
 import JardinainsLogo from './components/JardinainsLogo';
 
 import { Play, Pause, Settings, Trophy, HelpCircle, Info, Grid, Heart, Volume2, VolumeX, RotateCcw } from 'lucide-react';
@@ -34,8 +33,6 @@ export default function App() {
   const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [highScores, setHighScores] = useState<HighScoreEntry[]>([]);
-  const [activePowerUps, setActivePowerUps] = useState<ActivePowerUp[]>([]);
-  const lastPowerUpSyncRef = useRef<number>(0);
   
   const [options, setOptions] = useState<GameOptions>({
     soundEnabled: true,
@@ -256,8 +253,6 @@ export default function App() {
     engine.stickyBall = false;
     engine.laserActiveTime = 0;
     engine.nainsJuggled = 0;
-    setActivePowerUps([]);
-    lastPowerUpSyncRef.current = 0;
     
     engine.balls = [{
       id: 'b1',
@@ -317,12 +312,7 @@ export default function App() {
     engine.paddleX = Math.max(12, Math.min(CANVAS_WIDTH - 12 - engine.paddleWidth, engine.paddleX));
 
     // Powerups tick
-    const activeList = tickActivePowerUps(engine.activeTimers, dt, engine);
-    const now = performance.now();
-    if (now - lastPowerUpSyncRef.current > 100) {
-      lastPowerUpSyncRef.current = now;
-      setActivePowerUps([...activeList]);
-    }
+    tickActivePowerUps(engine.activeTimers, dt, engine);
 
     // Laser firing
     if (engine.laserActiveTime > 0) {
@@ -753,13 +743,6 @@ export default function App() {
       {/* Main Jardinains Game Arcade Cabinet Window */}
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
         
-        {/* Active Powerup Timers HUD (shown during play) */}
-        {gameState === 'playing' && activePowerUps.length > 0 && (
-          <div className="w-full flex justify-center mb-2">
-            <PowerUpTimers activePowerUps={activePowerUps} />
-          </div>
-        )}
-
         {/* Authentic Jardinains Cabinet Layout (Black Playfield Left + Forest Green Sidebar Right) */}
         <div className="w-full bg-[#031c09] p-2 sm:p-3 rounded-2xl border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col md:flex-row gap-3 items-stretch relative">
           
