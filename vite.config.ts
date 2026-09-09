@@ -65,7 +65,15 @@ function aistudioMediaPlugin(): Plugin {
 }
 // LINT.ThenChange(//depot/google3/java/com/google/alkali/boq/makersuite/applet_dev_service/templates/initializers/react_theme/vite.config.ts:aistudio_media_plugin)
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
+  if (command === 'serve') {
+    const devHtmlPath = path.resolve(__dirname, 'index.dev.html');
+    const rootHtmlPath = path.resolve(__dirname, 'index.html');
+    if (fs.existsSync(devHtmlPath)) {
+      fs.copyFileSync(devHtmlPath, rootHtmlPath);
+    }
+  }
+
   return {
     base: './',
     build: {
@@ -100,6 +108,11 @@ export default defineConfig(() => {
             html = html.replace(/type="module"/g, '');
             html = html.replace(/<script\s+>/g, '<script>');
             fs.writeFileSync(distHtmlPath, html);
+
+            // Copy the compiled production build to root index.html
+            const rootHtmlPath = path.resolve(__dirname, 'index.html');
+            fs.copyFileSync(distHtmlPath, rootHtmlPath);
+            console.log('Successfully copied production build to root index.html');
           }
         }
       }
