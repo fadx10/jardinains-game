@@ -76,13 +76,31 @@ export default defineConfig(() => {
           index: path.resolve(__dirname, 'index.html'),
         },
         output: {
+          format: 'iife',
+          name: 'JardinainsApp',
           entryFileNames: 'assets/app-[hash].js',
           chunkFileNames: 'assets/[name]-[hash].js',
           assetFileNames: 'assets/[name]-[hash].[ext]',
         },
       },
     },
-    plugins: [react(), tailwindcss(), aistudioMediaPlugin(), viteSingleFile()],
+    plugins: [
+      react(), 
+      tailwindcss(), 
+      aistudioMediaPlugin(), 
+      viteSingleFile(),
+      {
+        name: 'remove-module-type',
+        closeBundle() {
+          const distHtmlPath = path.resolve(__dirname, 'dist', 'index.html');
+          if (fs.existsSync(distHtmlPath)) {
+            let html = fs.readFileSync(distHtmlPath, 'utf8');
+            html = html.replace(/type="module"\s*crossorigin/g, '');
+            fs.writeFileSync(distHtmlPath, html);
+          }
+        }
+      }
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
