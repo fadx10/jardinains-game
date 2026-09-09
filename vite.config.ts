@@ -65,13 +65,11 @@ function aistudioMediaPlugin(): Plugin {
 }
 // LINT.ThenChange(//depot/google3/java/com/google/alkali/boq/makersuite/applet_dev_service/templates/initializers/react_theme/vite.config.ts:aistudio_media_plugin)
 
-export default defineConfig(({ command }) => {
-  if (command === 'serve') {
-    const devHtmlPath = path.resolve(__dirname, 'index.dev.html');
-    const rootHtmlPath = path.resolve(__dirname, 'index.html');
-    if (fs.existsSync(devHtmlPath)) {
-      fs.copyFileSync(devHtmlPath, rootHtmlPath);
-    }
+export default defineConfig(() => {
+  const devHtmlPath = path.resolve(__dirname, 'index.dev.html');
+  const rootHtmlPath = path.resolve(__dirname, 'index.html');
+  if (fs.existsSync(devHtmlPath)) {
+    fs.copyFileSync(devHtmlPath, rootHtmlPath);
   }
 
   return {
@@ -83,13 +81,6 @@ export default defineConfig(({ command }) => {
         input: {
           index: path.resolve(__dirname, 'index.html'),
         },
-        output: {
-          format: 'iife',
-          name: 'JardinainsApp',
-          entryFileNames: 'assets/app-[hash].js',
-          chunkFileNames: 'assets/[name]-[hash].js',
-          assetFileNames: 'assets/[name]-[hash].[ext]',
-        },
       },
     },
     plugins: [
@@ -97,21 +88,6 @@ export default defineConfig(({ command }) => {
       tailwindcss(), 
       aistudioMediaPlugin(), 
       viteSingleFile(),
-      {
-        name: 'remove-module-type',
-        closeBundle() {
-          const rootHtmlPath = path.resolve(__dirname, 'index.html');
-          if (fs.existsSync(rootHtmlPath)) {
-            let html = fs.readFileSync(rootHtmlPath, 'utf8');
-            html = html.replace(/type="module"\s*crossorigin/g, '');
-            html = html.replace(/crossorigin\s*type="module"/g, '');
-            html = html.replace(/type="module"/g, '');
-            html = html.replace(/<script\s+>/g, '<script>');
-            fs.writeFileSync(rootHtmlPath, html);
-            console.log('Successfully optimized root index.html directly');
-          }
-        }
-      }
     ],
     resolve: {
       alias: {
