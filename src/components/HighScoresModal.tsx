@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Award, X, RotateCcw, Heart, Plus, Check } from 'lucide-react';
 import { HighScoreEntry } from '../types';
 
@@ -31,6 +31,15 @@ export default function HighScoresModal({
     }
   });
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitted(false);
+      try {
+        setPlayerName(localStorage.getItem('jardinains_player_name') || 'PLAYER 1');
+      } catch {}
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

@@ -33,6 +33,8 @@ export default function App() {
   const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [highScores, setHighScores] = useState<HighScoreEntry[]>([]);
+  const [playerName, setPlayerName] = useState('PLAYER 1');
+  const [playerProgress, setPlayerProgress] = useState<Record<string, number>>({});
   
   const [options, setOptions] = useState<GameOptions>({
     soundEnabled: true,
@@ -114,8 +116,23 @@ export default function App() {
     try {
       const savedScores = localStorage.getItem('jardinains_scores');
       if (savedScores) setHighScores(JSON.parse(savedScores));
-      const savedLevel = localStorage.getItem('jardinains_unlocked');
-      if (savedLevel) setUnlockedLevel(parseInt(savedLevel, 10));
+      
+      const savedName = localStorage.getItem('jardinains_player_name') || 'PLAYER 1';
+      setPlayerName(savedName);
+      
+      const savedProgress = localStorage.getItem('jardinains_player_progress');
+      let progress: Record<string, number> = {};
+      if (savedProgress) {
+        progress = JSON.parse(savedProgress);
+      } else {
+        const legacyLevel = localStorage.getItem('jardinains_unlocked');
+        if (legacyLevel) {
+          progress[savedName] = parseInt(legacyLevel, 10);
+        }
+      }
+      setPlayerProgress(progress);
+      setUnlockedLevel(progress[savedName] || 1);
+
       const savedOptions = localStorage.getItem('jardinains_options');
       if (savedOptions) {
         const parsedOpts = JSON.parse(savedOptions);
@@ -151,6 +168,11 @@ export default function App() {
       const nextLvl = currentLevelIdx + 2;
       if (nextLvl > unlockedLevel) {
         setUnlockedLevel(nextLvl);
+        setPlayerProgress(prev => {
+          const newProgress = { ...prev, [playerName || 'PLAYER 1']: nextLvl };
+          localStorage.setItem('jardinains_player_progress', JSON.stringify(newProgress));
+          return newProgress;
+        });
         localStorage.setItem('jardinains_unlocked', nextLvl.toString());
       }
     }
@@ -975,6 +997,24 @@ export default function App() {
                       </div>
                     )}
 
+                    <div className="flex flex-col gap-1.5 w-full bg-[#04280e] p-2 rounded-xl border border-[#0d4a1f] shadow-inner mb-2">
+                      <label className="text-[10px] sm:text-xs text-[#22c55e] font-bold uppercase tracking-wide px-1">Player Name:</label>
+                      <input 
+                        type="text" 
+                        maxLength={16}
+                        value={playerName}
+                        onChange={(e) => {
+                          const val = e.target.value.toUpperCase();
+                          setPlayerName(val);
+                          localStorage.setItem('jardinains_player_name', val);
+                          const lvl = playerProgress[val] || 1;
+                          setUnlockedLevel(lvl);
+                        }}
+                        placeholder="ENTER NAME"
+                        className="w-full bg-black/60 border border-[#166534] rounded-lg px-2.5 py-2 text-amber-300 font-mono font-bold text-sm focus:outline-none focus:border-amber-400 transition-colors"
+                      />
+                    </div>
+
                     <button 
                       onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
                       className="w-full py-2.5 sm:py-3 bg-gradient-to-b from-[#4ade80] to-[#16a34a] hover:from-[#86efac] hover:to-[#22c55e] text-black font-extrabold text-base sm:text-lg rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.5)] transition-all flex items-center justify-center gap-2 border-2 border-[#14532d] active:translate-y-0.5 tracking-wider cursor-pointer"
@@ -1327,6 +1367,7 @@ export default function App() {
         onReset={() => { localStorage.removeItem('jardinains_scores'); setHighScores([]); }}
         pendingScore={gameState === 'gameover' ? { score, level: currentLevelIdx + 1, nainsJuggled: engineRef.current?.nainsJuggled || 0 } : null}
         onSaveScore={(name, s, lvl, nj) => {
+          setPlayerName(name);
           const newScores = [...highScores, { id: Date.now().toString(), name, score: s, level: lvl, nainsJuggled: nj, date: new Date().toLocaleDateString() }]
             .sort((a, b) => b.score - a.score).slice(0, 10);
           setHighScores(newScores);
