@@ -1,6 +1,45 @@
 <!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
+    <!-- Universal Production Loader: Immediately executes dist/index.html when visited on shared web hosting -->
+    <script>
+      (function() {
+        var host = window.location.hostname;
+        var isDev = host === 'localhost' || 
+                    host === '127.0.0.1' || 
+                    window.location.port === '3000' ||
+                    host.indexOf('ais-dev-') !== -1 ||
+                    host.indexOf('ais-pre-') !== -1;
+        
+        if (!isDev) {
+          var pathname = window.location.pathname;
+          if (pathname.indexOf('/dist/') === -1) {
+            try {
+              var lastSlash = pathname.lastIndexOf('/');
+              var baseDir = lastSlash !== -1 ? pathname.substring(0, lastSlash + 1) : '/';
+              if (!baseDir.endsWith('/')) baseDir += '/';
+              
+              var xhr = new XMLHttpRequest();
+              xhr.open('GET', baseDir + 'dist/index.html?v=' + Date.now(), false);
+              xhr.send();
+              
+              if (xhr.status === 200 && xhr.responseText && xhr.responseText.length > 500) {
+                if (typeof window.stop === 'function') window.stop();
+                document.open();
+                document.write(xhr.responseText);
+                document.close();
+                return;
+              }
+            } catch (e) {}
+            
+            // Fallback: Clean redirect to dist/index.html and stop parsing raw TypeScript
+            if (typeof window.stop === 'function') window.stop();
+            window.location.replace(baseDir + 'dist/index.html' + window.location.search + window.location.hash);
+          }
+        }
+      })();
+    </script>
+
     <!-- Safeguard for fetch assignment in iframe sandbox and proxy environments -->
     <script>
       (function() {
@@ -104,32 +143,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Fredoka:wght@600;700;800&family=Sniglet:wght@400;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
-
-    <!-- Automatic Production Redirect Safeguard -->
-    <script>
-      (function() {
-        var host = window.location.hostname;
-        var isDev = host === 'localhost' || 
-                    host === '127.0.0.1' || 
-                    window.location.port === '3000' ||
-                    host.indexOf('ais-dev-') !== -1 ||
-                    host.indexOf('ais-pre-') !== -1;
-        
-        if (!isDev) {
-          var pathname = window.location.pathname;
-          // If we are on public hosting and not already in /dist/, redirect to dist/index.html
-          if (pathname.indexOf('/dist/') === -1) {
-            var lastSlash = pathname.lastIndexOf('/');
-            var baseDir = lastSlash !== -1 ? pathname.substring(0, lastSlash + 1) : '/';
-            if (!baseDir.endsWith('/')) baseDir += '/';
-            window.location.replace(baseDir + 'dist/index.html' + window.location.search + window.location.hash);
-          }
-        }
-      })();
-    </script>
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-black">
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
