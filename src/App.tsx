@@ -23,6 +23,7 @@ const CANVAS_HEIGHT = 600;
 const PADDLE_DEFAULT_WIDTH = 90;
 const PADDLE_HEIGHT = 16;
 const PADDLE_Y = CANVAS_HEIGHT - 40;
+const BALL_DEFAULT_SPEED = 4.6; // Gentle, classic starting ball speed
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -189,11 +190,13 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       engineRef.current.keys[e.code] = true;
       if (e.code === 'Space' && gameState === 'playing') {
-        // Launch attached balls
+        // Launch attached balls with natural upward trajectory
         engineRef.current.balls.forEach(b => {
           if (b.attachedToPaddle) {
             b.attachedToPaddle = false;
-            b.vy = -Math.abs(b.vy || -7);
+            const launchAngle = (Math.random() - 0.5) * 0.35; // gentle upward spread ~10 deg
+            b.vx = Math.sin(launchAngle) * b.speed;
+            b.vy = -Math.cos(launchAngle) * b.speed;
             playSound('paddle');
           }
         });
@@ -259,7 +262,9 @@ export default function App() {
     engineRef.current.balls.forEach(b => {
       if (b.attachedToPaddle) {
         b.attachedToPaddle = false;
-        b.vy = -Math.abs(b.vy || -7);
+        const launchAngle = (Math.random() - 0.5) * 0.35; // gentle upward spread ~10 deg
+        b.vx = Math.sin(launchAngle) * b.speed;
+        b.vy = -Math.cos(launchAngle) * b.speed;
         playSound('paddle');
       }
     });
@@ -293,7 +298,7 @@ export default function App() {
       y: PADDLE_Y - 8,
       vx: 0,
       vy: 0,
-      speed: 7.5,
+      speed: BALL_DEFAULT_SPEED,
       radius: 6,
       attachedToPaddle: true
     }];
@@ -427,7 +432,7 @@ export default function App() {
                   y: PADDLE_Y - 8,
                   vx: 0,
                   vy: 0,
-                  speed: 7.5,
+                  speed: BALL_DEFAULT_SPEED,
                   radius: 6,
                   attachedToPaddle: true
                 });
@@ -455,9 +460,11 @@ export default function App() {
           b.y = PADDLE_Y - b.radius;
         } else {
           b.y = PADDLE_Y - b.radius;
-          b.vy = -Math.abs(b.vy);
           const hitPos = (b.x - (engine.paddleX + engine.paddleWidth / 2)) / (engine.paddleWidth / 2);
-          b.vx = hitPos * b.speed;
+          const clampedHitPos = Math.max(-0.90, Math.min(0.90, hitPos));
+          const bounceAngle = clampedHitPos * (Math.PI / 3); // -60 to +60 degrees from vertical
+          b.vx = Math.sin(bounceAngle) * b.speed;
+          b.vy = -Math.cos(bounceAngle) * b.speed;
         }
         playSound('paddle');
       }
@@ -474,8 +481,20 @@ export default function App() {
         if (dx * dx + dy * dy < b.radius * b.radius) {
           if (!b.isFireball) {
             // Determine bounce direction
-            if (Math.abs(dx) > Math.abs(dy)) b.vx = -b.vx;
-            else b.vy = -b.vy;
+            if (Math.abs(dx) > Math.abs(dy)) {
+              b.vx = -b.vx;
+            } else {
+              b.vy = -b.vy;
+            }
+            // Ensure ball never gets trapped in purely horizontal bouncing
+            if (Math.abs(b.vy) < b.speed * 0.22) {
+              b.vy = b.vy < 0 ? -b.speed * 0.22 : b.speed * 0.22;
+              const curSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+              if (curSpeed > 0) {
+                b.vx = (b.vx / curSpeed) * b.speed;
+                b.vy = (b.vy / curSpeed) * b.speed;
+              }
+            }
           }
 
           if (brick.unbreakable && !b.isFireball) {

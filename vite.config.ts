@@ -72,7 +72,7 @@ function devSourceHtmlPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url?.split('?')[0] || '';
-        if (url === '/' || url === '/index.html') {
+        if (url === '/' || url === '/index.html' || url === '/index.source.html') {
           try {
             const templatePath = path.resolve(__dirname, 'index.source.html');
             if (fs.existsSync(templatePath)) {
@@ -109,17 +109,26 @@ function productionBundleSyncPlugin(): Plugin {
         fs.unlinkSync(distSourceHtml);
       }
 
-      // Copy the compiled bundle to root index.html so ANY hosting method works (Git clone, FTP, cPanel, etc.)
+      // Add prominent protection banner and copy the compiled bundle to root index.html
       if (fs.existsSync(distIndexHtml)) {
-        fs.copyFileSync(distIndexHtml, rootHtml);
-        console.log('✓ Successfully synced compiled production bundle to root index.html and dist/index.html');
+        let content = fs.readFileSync(distIndexHtml, 'utf-8');
+        const banner = '<!-- AUTO-GENERATED STANDALONE PRODUCTION BUNDLE - DO NOT EDIT DIRECTLY. SOURCE IS index.source.html -->\n';
+        if (!content.includes('AUTO-GENERATED STANDALONE PRODUCTION BUNDLE')) {
+          content = banner + content;
+          fs.writeFileSync(distIndexHtml, content, 'utf-8');
+        }
+        fs.writeFileSync(rootHtml, content, 'utf-8');
+        console.log('✓ Successfully generated and synced standalone production bundle to root index.html and dist/index.html');
       }
 
-      // Ensure .htaccess is copied to dist
-      const htaccessSource = path.resolve(__dirname, '.htaccess');
-      const htaccessDist = path.resolve(distDir, '.htaccess');
-      if (fs.existsSync(htaccessSource)) {
-        fs.copyFileSync(htaccessSource, htaccessDist);
+      // Ensure supporting assets (.htaccess, favicon.svg, manifest.json) are copied to dist
+      const assetsToCopy = ['.htaccess', 'favicon.svg', 'manifest.json'];
+      for (const asset of assetsToCopy) {
+        const src = path.resolve(__dirname, asset);
+        const dest = path.resolve(distDir, asset);
+        if (fs.existsSync(src)) {
+          fs.copyFileSync(src, dest);
+        }
       }
     },
   };

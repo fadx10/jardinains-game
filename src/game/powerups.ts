@@ -200,12 +200,14 @@ export function getRandomPowerUpType(): PowerUpType {
 export function createPowerUp(x: number, y: number, type?: PowerUpType): PowerUp {
   const chosenType = type || getRandomPowerUpType();
   const isHeart = chosenType === 'heart';
-  // Life reward is a large 3D glossy sticker heart (54x50); others are large wide capsules (60x34)
-  const w = isHeart ? 54 : 60;
-  const h = isHeart ? 50 : 34;
+  // Significantly enlarged reward dimensions (~1.6x larger: capsules 98x54, heart 88x80)
+  const w = isHeart ? 88 : 98;
+  const h = isHeart ? 80 : 54;
+  // Ensure the larger reward remains strictly inside playing field bounds (arena 800 wide, 12px walls)
+  const clampedX = Math.max(16, Math.min(800 - 16 - w, x - w / 2));
   return {
     id: `pw_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-    x: x - w / 2,
+    x: clampedX,
     y,
     w,
     h,
@@ -314,23 +316,23 @@ function drawGlossyHeartReward(
 
   // 6. Attached "+1 LIFE" Ribbon Banner
   ctx.save();
-  ctx.translate(0, sh * 0.65);
+  ctx.translate(0, sh * 0.68);
   ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-  ctx.shadowBlur = 6;
+  ctx.shadowBlur = 8;
 
   // Banner Pill
   ctx.fillStyle = '#0f172a';
   ctx.beginPath();
-  ctx.roundRect(-24, -8, 48, 16, 8);
+  ctx.roundRect(-36, -11, 72, 22, 11);
   ctx.fill();
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Banner Text
   ctx.shadowBlur = 0;
   ctx.fillStyle = '#fde047';
-  ctx.font = 'bold 10px system-ui, -apple-system, sans-serif';
+  ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText('♥ +1 LIFE', 0, 0.5);
@@ -348,8 +350,8 @@ export function drawPowerUp(ctx: CanvasRenderingContext2D, powerup: PowerUp) {
   const tilt = Math.sin(frame * 0.07) * 0.08;
 
   const isHeart = powerup.type === 'heart';
-  const w = powerup.w || (isHeart ? 54 : 60);
-  const h = powerup.h || (isHeart ? 50 : 34);
+  const w = powerup.w || (isHeart ? 88 : 98);
+  const h = powerup.h || (isHeart ? 80 : 54);
   const x = powerup.x;
   const y = powerup.y + bobY;
 
@@ -378,12 +380,12 @@ export function drawPowerUp(ctx: CanvasRenderingContext2D, powerup: PowerUp) {
 
   ctx.fillStyle = grad;
   ctx.beginPath();
-  ctx.roundRect(-w / 2, -h / 2, w, h, 16);
+  ctx.roundRect(-w / 2, -h / 2, w, h, 20);
   ctx.fill();
 
   // Highlight Border with glow
   ctx.strokeStyle = cfg.isNegative ? '#fca5a5' : '#ffffff';
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 2.5;
   ctx.stroke();
 
   // Glass Specular Sheen (top half glossy curve)
@@ -393,21 +395,21 @@ export function drawPowerUp(ctx: CanvasRenderingContext2D, powerup: PowerUp) {
   sheenGrad.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
   ctx.fillStyle = sheenGrad;
   ctx.beginPath();
-  ctx.roundRect(-w / 2 + 2.5, -h / 2 + 2, w - 5, (h - 4) / 2, [13, 13, 3, 3]);
+  ctx.roundRect(-w / 2 + 3, -h / 2 + 2.5, w - 6, (h - 5) / 2, [17, 17, 4, 4]);
   ctx.fill();
 
   // Attached Left Emblem Disc (Distinct icon badge)
-  const emblemX = -w / 2 + 16;
+  const emblemR = 19;
+  const emblemX = -w / 2 + 7 + emblemR; // Centered on left side
   const emblemY = 0;
-  const emblemR = 11.5;
 
   ctx.save();
   ctx.beginPath();
   ctx.arc(emblemX, emblemY, emblemR, 0, Math.PI * 2);
   ctx.fillStyle = '#090d16';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Emblem Graphic Icon Rendering
@@ -416,97 +418,97 @@ export function drawPowerUp(ctx: CanvasRenderingContext2D, powerup: PowerUp) {
 
   if (powerup.type === 'bonus_points') {
     ctx.fillStyle = '#fde047';
-    ctx.font = 'bold 13px system-ui, sans-serif';
-    ctx.fillText('★', emblemX, emblemY + 0.5);
+    ctx.font = 'bold 20px system-ui, sans-serif';
+    ctx.fillText('★', emblemX, emblemY + 1);
   } else if (powerup.type === 'multiball') {
     // 3 mini glowing spheres
     ctx.fillStyle = '#38bdf8';
     ctx.beginPath();
-    ctx.arc(emblemX - 5, emblemY + 2, 2.5, 0, Math.PI * 2);
-    ctx.arc(emblemX + 5, emblemY + 2, 2.5, 0, Math.PI * 2);
-    ctx.arc(emblemX, emblemY - 4, 2.5, 0, Math.PI * 2);
+    ctx.arc(emblemX - 7, emblemY + 3.5, 3.8, 0, Math.PI * 2);
+    ctx.arc(emblemX + 7, emblemY + 3.5, 3.8, 0, Math.PI * 2);
+    ctx.arc(emblemX, emblemY - 5.5, 3.8, 0, Math.PI * 2);
     ctx.fill();
   } else if (powerup.type === 'laser') {
     ctx.fillStyle = '#fde047';
-    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.font = 'bold 18px system-ui, sans-serif';
     ctx.fillText('⚡', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'fireball') {
     ctx.fillStyle = '#fb923c';
-    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.font = 'bold 18px system-ui, sans-serif';
     ctx.fillText('🔥', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'expand') {
     ctx.fillStyle = '#4ade80';
-    ctx.font = 'bold 13px monospace, sans-serif';
+    ctx.font = 'bold 20px monospace, sans-serif';
     ctx.fillText('↔', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'shrink') {
     ctx.fillStyle = '#ef4444';
-    ctx.font = 'bold 13px monospace, sans-serif';
+    ctx.font = 'bold 20px monospace, sans-serif';
     ctx.fillText('▼', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'shield') {
     ctx.fillStyle = '#38bdf8';
-    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.font = 'bold 18px system-ui, sans-serif';
     ctx.fillText('🛡️', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'sticky') {
     ctx.fillStyle = '#c084fc';
-    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.font = 'bold 18px system-ui, sans-serif';
     ctx.fillText('🧲', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'slow_ball') {
     ctx.fillStyle = '#67e8f9';
-    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.font = 'bold 20px system-ui, sans-serif';
     ctx.fillText('❄', emblemX, emblemY + 0.5);
   } else if (powerup.type === 'fast_ball') {
     ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 13px system-ui, sans-serif';
+    ctx.font = 'bold 20px system-ui, sans-serif';
     ctx.fillText('⚡', emblemX, emblemY + 0.5);
   }
   ctx.restore();
 
   // High-Contrast Bold Text Label on Right Side
-  const labelX = 8;
+  const labelX = 20;
   ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-  ctx.shadowBlur = 4;
+  ctx.shadowBlur = 5;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
   if (powerup.type === 'expand') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
     ctx.fillText('WIDE', labelX, 0.5);
   } else if (powerup.type === 'shrink') {
     ctx.fillStyle = '#fee2e2';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
     ctx.fillText('MINI', labelX, 0.5);
   } else if (powerup.type === 'multiball') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 13.5px system-ui, -apple-system, sans-serif';
     ctx.fillText('x3 BALL', labelX, 0.5);
   } else if (powerup.type === 'slow_ball') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
     ctx.fillText('SLOW', labelX, 0.5);
   } else if (powerup.type === 'fast_ball') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
     ctx.fillText('FAST', labelX, 0.5);
   } else if (powerup.type === 'sticky') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
     ctx.fillText('CATCH', labelX, 0.5);
   } else if (powerup.type === 'laser') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
     ctx.fillText('LASER', labelX, 0.5);
   } else if (powerup.type === 'fireball') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
     ctx.fillText('FIRE', labelX, 0.5);
   } else if (powerup.type === 'bonus_points') {
     ctx.fillStyle = '#fde047';
-    ctx.font = 'bold 12px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
     ctx.fillText('+1000', labelX, 0.5);
   } else if (powerup.type === 'shield') {
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+    ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
     ctx.fillText('SHIELD', labelX, 0.5);
   }
 
@@ -622,7 +624,7 @@ export function applyPowerUpPickup(
       const newBalls: Ball[] = [];
 
       currentBalls.forEach(b => {
-        const baseSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 7.5;
+        const baseSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || b.speed || 4.6;
         const currentAngle = Math.atan2(b.vy, b.vx);
 
         // Cloned Ball A (+30 degrees)
@@ -729,7 +731,7 @@ export function tickActivePowerUps(
         game.balls.forEach(b => {
           if (b.attachedToPaddle) {
             b.attachedToPaddle = false;
-            b.vy = -Math.abs(b.vy || -7);
+            b.vy = -Math.abs(b.vy || -b.speed || -4.6);
           }
         });
       } else if (type === 'laser') {
@@ -760,6 +762,6 @@ export function getBallSpeedMultiplier(
   activeTimers: Map<PowerUpType, { totalDuration: number; remainingTime: number }>
 ): number {
   if (activeTimers.has('slow_ball')) return 0.65;
-  if (activeTimers.has('fast_ball')) return 1.35;
+  if (activeTimers.has('fast_ball')) return 1.40;
   return 1.0;
 }
