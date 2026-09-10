@@ -29,6 +29,8 @@ jobs:
           mkdir -p build_output
           cp dist/index.html build_output/index.html
           cp -r public/* build_output/ 2>/dev/null || true
+          cp favicon.svg build_output/ 2>/dev/null || true
+          cp manifest.json build_output/ 2>/dev/null || true
           cp .htaccess build_output/ 2>/dev/null || true
 
       - name: 🚀 Deploy to Hostinger via FTP

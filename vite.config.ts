@@ -65,6 +65,66 @@ function aistudioMediaPlugin(): Plugin {
 }
 // LINT.ThenChange(//depot/google3/java/com/google/alkali/boq/makersuite/applet_dev_service/templates/initializers/react_theme/vite.config.ts:aistudio_media_plugin)
 
+// Dev plugin that serves transformed index.source.html for local development
+function devSourceHtmlPlugin(): Plugin {
+  return {
+    name: 'vite-plugin-dev-source-html',
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const url = req.url?.split('?')[0] || '';
+        if (url === '/' || url === '/index.html') {
+          try {
+            const templatePath = path.resolve(__dirname, 'index.source.html');
+            if (fs.existsSync(templatePath)) {
+              const raw = fs.readFileSync(templatePath, 'utf-8');
+              const transformed = await server.transformIndexHtml(req.url || '/', raw);
+              res.setHeader('Content-Type', 'text/html; charset=utf-8');
+              res.setHeader('Cache-Control', 'no-cache');
+              res.end(transformed);
+              return;
+            }
+          } catch (err) {
+            return next(err);
+          }
+        }
+        next();
+      });
+    },
+  };
+}
+
+// Build plugin that syncs the compiled bundle to both dist/index.html and root index.html
+function productionBundleSyncPlugin(): Plugin {
+  return {
+    name: 'vite-plugin-production-bundle-sync',
+    closeBundle() {
+      const distDir = path.resolve(__dirname, 'dist');
+      const rootHtml = path.resolve(__dirname, 'index.html');
+      const distSourceHtml = path.resolve(distDir, 'index.source.html');
+      const distIndexHtml = path.resolve(distDir, 'index.html');
+
+      // If vite built into index.source.html, ensure dist/index.html exists
+      if (fs.existsSync(distSourceHtml)) {
+        fs.copyFileSync(distSourceHtml, distIndexHtml);
+        fs.unlinkSync(distSourceHtml);
+      }
+
+      // Copy the compiled bundle to root index.html so ANY hosting method works (Git clone, FTP, cPanel, etc.)
+      if (fs.existsSync(distIndexHtml)) {
+        fs.copyFileSync(distIndexHtml, rootHtml);
+        console.log('✓ Successfully synced compiled production bundle to root index.html and dist/index.html');
+      }
+
+      // Ensure .htaccess is copied to dist
+      const htaccessSource = path.resolve(__dirname, '.htaccess');
+      const htaccessDist = path.resolve(distDir, '.htaccess');
+      if (fs.existsSync(htaccessSource)) {
+        fs.copyFileSync(htaccessSource, htaccessDist);
+      }
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
     base: './',
@@ -73,15 +133,17 @@ export default defineConfig(() => {
       emptyOutDir: true,
       rollupOptions: {
         input: {
-          index: path.resolve(__dirname, 'index.html'),
+          index: path.resolve(__dirname, 'index.source.html'),
         },
       },
     },
     plugins: [
+      devSourceHtmlPlugin(),
       react(), 
       tailwindcss(), 
       aistudioMediaPlugin(), 
       viteSingleFile(),
+      productionBundleSyncPlugin(),
     ],
     resolve: {
       alias: {
@@ -89,10 +151,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
   };
