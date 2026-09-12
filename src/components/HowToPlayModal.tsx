@@ -62,6 +62,13 @@ export default function HowToPlayModal({ isOpen, onClose }: HowToPlayModalProps)
                     <td className="py-1.5 px-3 text-right text-emerald-400 font-bold">+150</td>
                   </tr>
                   <tr className="hover:bg-slate-800/40">
+                    <td className="py-1.5 px-3 font-sans text-cyan-200 flex items-center gap-1.5">
+                      <span className="inline-block w-2.5 h-2.5 rounded-sm bg-cyan-300/40 border border-cyan-200" />
+                      Glass Tile (Crystalline Shatter)
+                    </td>
+                    <td className="py-1.5 px-3 text-right text-cyan-300 font-bold">+120</td>
+                  </tr>
+                  <tr className="hover:bg-slate-800/40">
                     <td className="py-1.5 px-3 font-sans text-slate-200">Bonus Brick (Golden Spark)</td>
                     <td className="py-1.5 px-3 text-right text-amber-400 font-bold">+250</td>
                   </tr>

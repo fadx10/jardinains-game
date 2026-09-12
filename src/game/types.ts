@@ -10,6 +10,7 @@ export interface Ball {
   radius: number;
   attachedToPaddle: boolean;
   isFireball?: boolean;
+  ballPower?: 'fireball' | 'slow_ball' | 'fast_ball' | null;
 }
 
 export interface Brick {
@@ -26,6 +27,7 @@ export interface Brick {
   accentColor?: string;
   isPowerupBrick?: boolean;
   isBonusBrick?: boolean;
+  isGlassBrick?: boolean;
   bonusPoints?: number;
   flashTimer?: number;
   shakeX?: number;
@@ -124,6 +126,7 @@ export interface Particle {
 }
 
 export interface FloatingText {
+  id?: string;
   text: string;
   x: number;
   y: number;

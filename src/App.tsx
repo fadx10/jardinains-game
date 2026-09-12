@@ -5,7 +5,7 @@ import { LEVELS, TOTAL_LEVELS, getLevelName } from './game/levels';
 import { playSound, startMusic, stopMusic, setSoundMuted, setMusicEnabled, setSoundVolume, setMusicVolume } from './game/audio';
 import { updateJardinains, drawJardinain, drawProjectile, createParachutingNain, NAIN_WIDTH, NAIN_HEIGHT } from './game/nain';
 import { applyPowerUpPickup, tickActivePowerUps, drawPowerUp, getBallSpeedMultiplier, POWERUP_CONFIGS, createPowerUp } from './game/powerups';
-import { drawArcadeBorder, drawClassicBeveledBrick, drawClassicPaddle, drawClassicBall, drawClassicShield } from './game/retroUi';
+import { drawArcadeBorder, drawClassicBeveledBrick, drawClassicPaddle, drawClassicBall, drawClassicShield, drawGlassTitlePlaque, drawActivePowerUpBadges } from './game/retroUi';
 
 // Modals
 import AboutModal from './components/AboutModal';
@@ -278,9 +278,13 @@ export default function App() {
     }
   };
 
-  const startGame = (levelIdx: number) => {
+  const startGame = (levelIdx: number, preserveBallPower = false) => {
     const config = LEVELS[levelIdx];
     const engine = engineRef.current;
+
+    // Retain ball power when advancing to next level
+    const prevBallPower = preserveBallPower && engine.balls.length > 0 ? engine.balls[0].ballPower : null;
+    const prevIsFireball = preserveBallPower && engine.balls.some(b => b.isFireball);
     
     // Reset Engine State
     engine.paddleWidth = PADDLE_DEFAULT_WIDTH;
@@ -291,6 +295,14 @@ export default function App() {
     engine.stickyBall = false;
     engine.laserActiveTime = 0;
     engine.nainsJuggled = 0;
+
+    if (prevIsFireball) {
+      engine.activeTimers.set('fireball', { totalDuration: 0, remainingTime: 0 });
+    } else if (prevBallPower === 'slow_ball') {
+      engine.activeTimers.set('slow_ball', { totalDuration: 0, remainingTime: 0 });
+    } else if (prevBallPower === 'fast_ball') {
+      engine.activeTimers.set('fast_ball', { totalDuration: 0, remainingTime: 0 });
+    }
     
     engine.balls = [{
       id: 'b1',
@@ -300,7 +312,9 @@ export default function App() {
       vy: 0,
       speed: BALL_DEFAULT_SPEED,
       radius: 6,
-      attachedToPaddle: true
+      attachedToPaddle: true,
+      isFireball: prevIsFireball,
+      ballPower: prevBallPower,
     }];
 
     engine.projectiles = [];
@@ -323,7 +337,17 @@ export default function App() {
             hp: cell === 5 ? 999 : cell === 4 ? 4 : cell === 3 ? 3 : cell === 2 ? 2 : 1,
             maxHp: cell === 4 ? 4 : cell === 3 ? 3 : cell === 2 ? 2 : 1,
             unbreakable: cell === 5,
-            color: ['#ef4444','#10b981','#3b82f6','#94a3b8','#f59e0b','#d946ef','#eab308'][cell-1],
+            isGlassBrick: cell === 8,
+            color: [
+              '#ef4444',
+              '#10b981',
+              '#3b82f6',
+              '#94a3b8',
+              '#f59e0b',
+              '#d946ef',
+              '#eab308',
+              'rgba(186, 230, 253, 0.85)',
+            ][cell - 1] || '#38bdf8',
           });
         }
       });
@@ -378,8 +402,6 @@ export default function App() {
       }
     }
 
-    const speedMult = getBallSpeedMultiplier(engine.activeTimers);
-
     // Balls
     for (let i = engine.balls.length - 1; i >= 0; i--) {
       const b = engine.balls[i];
@@ -389,8 +411,9 @@ export default function App() {
         continue;
       }
 
-      b.x += b.vx * speedMult;
-      b.y += b.vy * speedMult;
+      const bSpeedMult = getBallSpeedMultiplier(engine.activeTimers, [b]);
+      b.x += b.vx * bSpeedMult;
+      b.y += b.vy * bSpeedMult;
 
       // Walls (12px stone arcade border)
       const wallThickness = 12;
@@ -426,6 +449,9 @@ export default function App() {
               const next = prev - 1;
               if (next <= 0) handleGameOver();
               else {
+                engine.activeTimers.delete('fireball');
+                engine.activeTimers.delete('slow_ball');
+                engine.activeTimers.delete('fast_ball');
                 engine.balls.push({
                   id: 'b_new',
                   x: engine.paddleX + engine.paddleWidth / 2,
@@ -510,24 +536,50 @@ export default function App() {
               if (brick.type === 4) pts = 200;
               if (brick.type === 6) pts = 100;
               if (brick.type === 7) pts = 250;
+              if (brick.isGlassBrick || brick.type === 8) pts = 120;
               setScore(s => s + pts);
-              playSound(brick.type === 7 ? 'bonus_brick' : 'brick_break');
+
+              if (brick.isGlassBrick || brick.type === 8) {
+                playSound('glass_shatter');
+                engine.floatingTexts.push({
+                  id: `ft_${Date.now()}_${Math.random()}`,
+                  text: '+120 GLASS',
+                  x: brick.x + brick.w / 2,
+                  y: brick.y,
+                  color: '#7dd3fc',
+                  alpha: 1,
+                  vy: -1.2,
+                });
+                for (let p = 0; p < 12; p++) {
+                  engine.particles.push({
+                    x: brick.x + brick.w / 2 + (Math.random() - 0.5) * brick.w * 0.8,
+                    y: brick.y + brick.h / 2 + (Math.random() - 0.5) * brick.h * 0.8,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 2.5 + 1,
+                    color: ['#ffffff', '#bae6fd', '#7dd3fc', '#e0f2fe', '#38bdf8'][Math.floor(Math.random() * 5)],
+                    alpha: 1,
+                    decay: 0.035
+                  });
+                }
+              } else {
+                playSound(brick.type === 7 ? 'bonus_brick' : 'brick_break');
+                for (let p = 0; p < 5; p++) {
+                  engine.particles.push({
+                    x: brick.x + brick.w / 2,
+                    y: brick.y + brick.h / 2,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    radius: Math.random() * 3,
+                    color: brick.color,
+                    alpha: 1,
+                    decay: 0.05
+                  });
+                }
+              }
 
               if (brick.type === 6) {
                 engine.powerups.push(createPowerUp(brick.x + brick.w/2, brick.y + brick.h));
-              }
-
-              for (let p = 0; p < 5; p++) {
-                engine.particles.push({
-                  x: brick.x + brick.w / 2,
-                  y: brick.y + brick.h / 2,
-                  vx: (Math.random() - 0.5) * 4,
-                  vy: (Math.random() - 0.5) * 4,
-                  radius: Math.random() * 3,
-                  color: brick.color,
-                  alpha: 1,
-                  decay: 0.05
-                });
               }
 
               // Check level clear
@@ -535,7 +587,7 @@ export default function App() {
                 handleLevelComplete();
               }
             } else {
-              playSound('brick_hit');
+              playSound((brick.isGlassBrick || brick.type === 8) ? 'glass_shatter' : 'brick_hit');
             }
           }
           break; // One collision per frame
@@ -651,8 +703,25 @@ export default function App() {
                 br.hp -= 1;
                 if (br.hp <= 0) {
                   engine.bricks.splice(j, 1);
-                  playSound('brick_break');
-                  setScore(s => s + 50);
+                  if (br.isGlassBrick || br.type === 8) {
+                    playSound('glass_shatter');
+                    setScore(s => s + 120);
+                    for (let p = 0; p < 10; p++) {
+                      engine.particles.push({
+                        x: br.x + br.w / 2,
+                        y: br.y + br.h / 2,
+                        vx: (Math.random() - 0.5) * 5,
+                        vy: (Math.random() - 0.5) * 5,
+                        radius: Math.random() * 2.5 + 1,
+                        color: '#bae6fd',
+                        alpha: 1,
+                        decay: 0.04
+                      });
+                    }
+                  } else {
+                    playSound('brick_break');
+                    setScore(s => s + 50);
+                  }
                   if (engine.bricks.filter(b => !b.unbreakable).length === 0) handleLevelComplete();
                 }
               } else { playSound('unbreakable_hit'); }
@@ -780,6 +849,13 @@ export default function App() {
       ctx.fillText(ft.text, ft.x, ft.y);
     });
     ctx.globalAlpha = 1;
+
+    // 12. Translucent Glass Title Plaque (Current Level & Name)
+    const levelTitle = LEVELS[currentLevelIdx]?.name ? `LEVEL ${currentLevelIdx + 1}: ${LEVELS[currentLevelIdx].name}` : `LEVEL ${currentLevelIdx + 1}`;
+    drawGlassTitlePlaque(ctx, levelTitle.toUpperCase(), CANVAS_WIDTH / 2, 14);
+
+    // 13. Active PowerUp Status Badges in top right
+    drawActivePowerUpBadges(ctx, engine.activeTimers, engine.balls, CANVAS_WIDTH - 18, 15);
   };
 
   const userHighScore = highScores.length > 0 ? Math.max(...highScores.map(h => h.score), score) : Math.max(score, 125);
@@ -1043,14 +1119,17 @@ export default function App() {
             {/* Level Cleared Overlay */}
             {gameState === 'levelclear' && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/75 backdrop-blur-md p-4">
-                <div className="bg-[#04260d] p-6 sm:p-8 rounded-3xl border-2 border-[#22c55e] text-center font-['Sniglet'] shadow-[0_0_50px_rgba(34,197,94,0.3)] max-w-sm w-full">
+                <div className="bg-[#04260d]/90 backdrop-blur-xl p-6 sm:p-8 rounded-3xl border-2 border-[#22c55e] text-center font-['Sniglet'] shadow-[0_0_50px_rgba(34,197,94,0.3)] max-w-sm w-full">
+                  <div className="inline-block px-3 py-1 rounded-full bg-white/10 border border-white/20 text-xs text-emerald-200 mb-2 font-mono">
+                    STAGE CONQUERED
+                  </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-[#4ade80] mb-1">LEVEL {currentLevelIdx + 1} CLEARED!</h2>
                   <p className="text-xs text-rose-300 font-bold mb-3 sm:mb-4 flex items-center justify-center gap-1">
                     <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" /> with love for yesra
                   </p>
                   <p className="text-white text-base sm:text-lg font-bold mb-4 sm:mb-6">SCORE: <span className="text-[#86efac]">{score.toLocaleString()}</span></p>
                   <button 
-                    onClick={() => startGame(currentLevelIdx + 1)} 
+                    onClick={() => startGame(currentLevelIdx + 1, true)} 
                     className="w-full py-2.5 sm:py-3 bg-[#22c55e] hover:bg-[#4ade80] text-black font-extrabold text-base sm:text-lg rounded-xl shadow-lg transition cursor-pointer"
                   >
                     NEXT LEVEL

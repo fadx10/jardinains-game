@@ -96,11 +96,11 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
     };
   }
 
-  // Level 1: "Garden Gate" - Welcoming layout with Normal, Strong, a Power-up and a Bonus Star
+  // Level 1: "Garden Gate" - Welcoming layout with Normal, Strong, a Power-up, Bonus Star and Glass Tiles
   if (lvlIndex === 0) {
     const l1Grid = [
-      [5, 1, 1, 2, 2, 7, 7, 2, 2, 1, 1, 5],
-      [1, 1, 2, 3, 6, 1, 1, 6, 3, 2, 1, 1],
+      [5, 8, 1, 2, 2, 7, 7, 2, 2, 1, 8, 5],
+      [1, 1, 8, 3, 6, 1, 1, 6, 3, 8, 1, 1],
       [1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1],
       [0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0],
       [0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
@@ -326,6 +326,10 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
 
       // Sprinkle guaranteed Powerup & Bonus brick if stage has none
       if (cell === 2 && r === 1 && c === 6 && rnd < 0.3) cell = 6;
+
+      // Sprinkle delicate crystalline Glass Tiles (cell 8)
+      if (cell === 1 && rnd > 0.75 && rnd < 0.90) cell = 8;
+      if (cell === 2 && (r === 0 || r === rows - 1) && rnd > 0.85) cell = 8;
 
       row.push(cell);
     }

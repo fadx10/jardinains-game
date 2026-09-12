@@ -68,11 +68,11 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     symbol: '❄',
     color: '#10b981', // Emerald ice
     glowColor: '#34d399',
-    durationMs: 14000,
-    conflictsWith: ['fast_ball'],
+    durationMs: 0, // Permanent on ball until another ball power
+    conflictsWith: ['fast_ball', 'fireball'],
     announcement: 'SLOW BALL! ❄',
     sound: 'freeze',
-    description: 'Slows down ball velocity by 35% for maximum precision',
+    description: 'Slows down ball velocity by 35% for maximum precision (stays until replaced)',
   },
   fast_ball: {
     type: 'fast_ball',
@@ -82,11 +82,11 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     symbol: '⚡',
     color: '#f59e0b', // Electric Amber
     glowColor: '#fbbf24',
-    durationMs: 12000,
-    conflictsWith: ['slow_ball'],
+    durationMs: 0, // Permanent on ball until another ball power
+    conflictsWith: ['slow_ball', 'fireball'],
     announcement: 'FAST BALL! ⚡',
     sound: 'powerup',
-    description: 'Accelerates ball speed by 35% for lightning combos',
+    description: 'Accelerates ball speed by 35% for lightning combos (stays until replaced)',
   },
   heart: {
     type: 'heart',
@@ -135,10 +135,11 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     symbol: '🔥',
     color: '#ea580c', // Blazing flame orange
     glowColor: '#fb923c',
-    durationMs: 14000,
+    durationMs: 0, // Stays fire permanently until another ball power!
+    conflictsWith: ['slow_ball', 'fast_ball'],
     announcement: 'FIRE BALL! 🔥',
     sound: 'powerup',
-    description: 'Turns balls into flaming meteors that pierce right through bricks',
+    description: 'Turns balls into flaming meteors that pierce through bricks (stays until replaced)',
   },
   bonus_points: {
     type: 'bonus_points',
@@ -591,6 +592,11 @@ export function applyPowerUpPickup(
       if (conflictType === 'shrink' || conflictType === 'expand') {
         game.paddleWidth = game.paddleDefaultWidth;
       }
+      if (conflictType === 'fireball') {
+        game.balls.forEach(b => {
+          b.isFireball = false;
+        });
+      }
     }
   }
 
@@ -606,6 +612,12 @@ export function applyPowerUpPickup(
         remainingTime: cfg.durationMs,
       });
     }
+  } else if (powerup.type === 'fireball' || powerup.type === 'slow_ball' || powerup.type === 'fast_ball') {
+    // Ball powers remain permanent until another ball power arrives!
+    game.activeTimers.set(powerup.type, {
+      totalDuration: 0,
+      remainingTime: 0,
+    });
   }
 
   // Execute Specific Effect Logic
@@ -639,6 +651,7 @@ export function applyPowerUpPickup(
           radius: b.radius,
           attachedToPaddle: false,
           isFireball: b.isFireball,
+          ballPower: b.ballPower,
         });
 
         // Cloned Ball B (-30 degrees)
@@ -653,6 +666,7 @@ export function applyPowerUpPickup(
           radius: b.radius,
           attachedToPaddle: false,
           isFireball: b.isFireball,
+          ballPower: b.ballPower,
         });
       });
 
@@ -661,11 +675,17 @@ export function applyPowerUpPickup(
       break;
     }
     case 'slow_ball': {
-      // Handled in ball movement loop based on active timer
+      game.balls.forEach(b => {
+        b.isFireball = false;
+        b.ballPower = 'slow_ball';
+      });
       break;
     }
     case 'fast_ball': {
-      // Handled in ball movement loop based on active timer
+      game.balls.forEach(b => {
+        b.isFireball = false;
+        b.ballPower = 'fast_ball';
+      });
       break;
     }
     case 'heart': {
@@ -683,6 +703,7 @@ export function applyPowerUpPickup(
     case 'fireball': {
       game.balls.forEach(b => {
         b.isFireball = true;
+        b.ballPower = 'fireball';
       });
       break;
     }
@@ -713,6 +734,22 @@ export function tickActivePowerUps(
   const activeList: ActivePowerUp[] = [];
 
   for (const [type, state] of activeTimers.entries()) {
+    // Permanent ball powers (fireball, slow_ball, fast_ball) stay on the ball indefinitely until replaced!
+    if (state.totalDuration === 0) {
+      const cfg = POWERUP_CONFIGS[type];
+      if (cfg) {
+        activeList.push({
+          type,
+          label: cfg.label,
+          icon: cfg.icon,
+          color: cfg.color,
+          totalDuration: 0,
+          remainingTime: 0,
+        });
+      }
+      continue;
+    }
+
     state.remainingTime -= dtMs;
 
     if (state.remainingTime <= 0) {
@@ -721,10 +758,6 @@ export function tickActivePowerUps(
 
       if (type === 'expand' || type === 'shrink') {
         game.paddleWidth = game.paddleDefaultWidth;
-      } else if (type === 'fireball') {
-        game.balls.forEach(b => {
-          b.isFireball = false;
-        });
       } else if (type === 'sticky') {
         game.stickyBall = false;
         // Release any attached balls
@@ -759,8 +792,13 @@ export function tickActivePowerUps(
 
 // Get effective ball speed multiplier based on active Slow/Fast powerups
 export function getBallSpeedMultiplier(
-  activeTimers: Map<PowerUpType, { totalDuration: number; remainingTime: number }>
+  activeTimers: Map<PowerUpType, { totalDuration: number; remainingTime: number }>,
+  balls?: Ball[]
 ): number {
+  if (balls && balls.length > 0) {
+    if (balls.some(b => b.ballPower === 'slow_ball')) return 0.65;
+    if (balls.some(b => b.ballPower === 'fast_ball')) return 1.40;
+  }
   if (activeTimers.has('slow_ball')) return 0.65;
   if (activeTimers.has('fast_ball')) return 1.40;
   return 1.0;

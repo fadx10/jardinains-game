@@ -1,4 +1,4 @@
-import { Brick, Ball } from './types';
+import { Brick, Ball, PowerUpType } from './types';
 
 /**
  * Authentic Retro Arcade Renderer for Jardinains!
@@ -79,6 +79,94 @@ function drawStoneWallSegment(
  */
 export function drawClassicBeveledBrick(ctx: CanvasRenderingContext2D, b: Brick) {
   const { x, y, w, h, color, unbreakable, hp, maxHp } = b;
+
+  if (b.isGlassBrick || b.type === 8) {
+    // Translucent Frosted Glass Tile with Refractive Prismatic Facets
+    ctx.save();
+
+    // 1. Frosted translucent crystal backdrop (reveals the starry background through it)
+    const glassGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+    glassGrad.addColorStop(0, 'rgba(240, 249, 255, 0.55)');
+    glassGrad.addColorStop(0.3, 'rgba(186, 230, 253, 0.35)');
+    glassGrad.addColorStop(0.7, 'rgba(125, 211, 252, 0.28)');
+    glassGrad.addColorStop(1, 'rgba(56, 189, 248, 0.45)');
+    ctx.fillStyle = glassGrad;
+    ctx.fillRect(x, y, w, h);
+
+    // 2. Translucent Cyan Core Tint
+    ctx.fillStyle = 'rgba(224, 242, 254, 0.22)';
+    ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+
+    // 3. Sharp Beveled Crystalline Edge Highlights
+    // Top & Left brilliant white specular glass rim
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillRect(x, y, w, 1.5);
+    ctx.fillRect(x, y, 1.5, h);
+
+    // Inner bright glass refraction line
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    ctx.fillRect(x + 2, y + 2, w - 4, 1);
+    ctx.fillRect(x + 2, y + 2, 1, h - 4);
+
+    // Bottom & Right refractive shadow rim
+    ctx.fillStyle = 'rgba(3, 105, 161, 0.65)';
+    ctx.fillRect(x, y + h - 1.5, w, 1.5);
+    ctx.fillRect(x + w - 1.5, y, 1.5, h);
+
+    // 4. Diagonal Specular Prismatic Sheen (Glass Glare reflection bands)
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x + 2, y + 2, w - 4, h - 4);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.38)';
+    ctx.beginPath();
+    ctx.moveTo(x + 8, y);
+    ctx.lineTo(x + 18, y);
+    ctx.lineTo(x + 2, y + h);
+    ctx.lineTo(x - 8, y + h);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.beginPath();
+    ctx.moveTo(x + 20, y);
+    ctx.lineTo(x + 28, y);
+    ctx.lineTo(x + 12, y + h);
+    ctx.lineTo(x + 4, y + h);
+    ctx.closePath();
+    ctx.fill();
+
+    // 5. Subtle Glass Surface Etchings (Frosted crystal horizontal lines)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 5, y + h * 0.5);
+    ctx.lineTo(x + w - 5, y + h * 0.5);
+    ctx.stroke();
+
+    // Corner Star Glint Sparkle on top-left glass corner
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x + 5, y + 5, 1.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // 6. Hairline fractures if damaged
+    if (maxHp > 1 && hp < maxHp) {
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x + 6, y + 3);
+      ctx.lineTo(x + w / 2, y + h / 2);
+      ctx.lineTo(x + w - 8, y + h - 4);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+    return;
+  }
 
   if (unbreakable) {
     // Unbreakable Industrial Steel Brick with Rivets & Hazard Grooves
@@ -305,23 +393,95 @@ export function drawClassicPaddle(
  */
 export function drawClassicBall(ctx: CanvasRenderingContext2D, b: Ball) {
   if (b.isFireball) {
-    // Fireball radial aura
-    const fireGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius + 6);
+    // Fireball radial aura with animated blazing corona
+    const pulse = Math.sin(Date.now() * 0.018) * 1.5;
+    const fireGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius + 7 + pulse);
     fireGrad.addColorStop(0, '#ffffff');
-    fireGrad.addColorStop(0.25, '#fef08a');
-    fireGrad.addColorStop(0.55, '#f97316');
-    fireGrad.addColorStop(0.85, '#dc2626');
+    fireGrad.addColorStop(0.2, '#fef08a');
+    fireGrad.addColorStop(0.45, '#f97316');
+    fireGrad.addColorStop(0.75, '#ea580c');
     fireGrad.addColorStop(1, 'rgba(220, 38, 38, 0)');
 
     ctx.fillStyle = fireGrad;
     ctx.beginPath();
-    ctx.arc(b.x, b.y, b.radius + 6, 0, Math.PI * 2);
+    ctx.arc(b.x, b.y, b.radius + 7 + pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#f97316';
+    // Burning meteor core
+    const coreGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius);
+    coreGrad.addColorStop(0, '#fffbeb');
+    coreGrad.addColorStop(0.4, '#fb923c');
+    coreGrad.addColorStop(1, '#c2410c');
+    ctx.fillStyle = coreGrad;
     ctx.beginPath();
     ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
     ctx.fill();
+
+    // Hot specular spark
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(b.x - 2, b.y - 2, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+
+  if (b.ballPower === 'slow_ball') {
+    // Glacial Ice Crystal Ball
+    const icePulse = Math.sin(Date.now() * 0.012) * 1.2;
+    const iceGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius + 5 + icePulse);
+    iceGrad.addColorStop(0, '#ffffff');
+    iceGrad.addColorStop(0.3, '#67e8f9');
+    iceGrad.addColorStop(0.65, '#06b6d4');
+    iceGrad.addColorStop(1, 'rgba(6, 182, 212, 0)');
+
+    ctx.fillStyle = iceGrad;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius + 5 + icePulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ice crystal core
+    const coreGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius);
+    coreGrad.addColorStop(0, '#ecfeff');
+    coreGrad.addColorStop(0.45, '#22d3ee');
+    coreGrad.addColorStop(1, '#0891b2');
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#cffafe';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    return;
+  }
+
+  if (b.ballPower === 'fast_ball') {
+    // Electric Lightning Supercharged Ball
+    const lightningPulse = (Math.random() - 0.5) * 2;
+    const elecGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius + 6 + lightningPulse);
+    elecGrad.addColorStop(0, '#ffffff');
+    elecGrad.addColorStop(0.3, '#fde047');
+    elecGrad.addColorStop(0.65, '#f59e0b');
+    elecGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+
+    ctx.fillStyle = elecGrad;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius + 6 + lightningPulse, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Electric core
+    const coreGrad = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius);
+    coreGrad.addColorStop(0, '#fef9c3');
+    coreGrad.addColorStop(0.45, '#f59e0b');
+    coreGrad.addColorStop(1, '#b45309');
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
     return;
   }
 
@@ -380,4 +540,138 @@ export function drawClassicShield(
   ctx.beginPath();
   ctx.arc(sparkX, y + 3.5, 4, 0, Math.PI * 2);
   ctx.fill();
+}
+
+/**
+ * Draws an authentic translucent frosted glass title plaque with prismatic specular sheen
+ */
+export function drawGlassTitlePlaque(
+  ctx: CanvasRenderingContext2D,
+  title: string,
+  centerX: number,
+  y: number
+) {
+  ctx.save();
+  ctx.font = 'bold 12px "Sniglet", sans-serif, system-ui';
+  const textMetrics = ctx.measureText(title);
+  const textWidth = textMetrics.width;
+  const padX = 14;
+  const w = textWidth + padX * 2;
+  const h = 22;
+  const x = centerX - w / 2;
+  const r = 6;
+
+  // 1. Frosted glass translucent background
+  const glassGrad = ctx.createLinearGradient(x, y, x, y + h);
+  glassGrad.addColorStop(0, 'rgba(255, 255, 255, 0.22)');
+  glassGrad.addColorStop(0.5, 'rgba(186, 230, 253, 0.10)');
+  glassGrad.addColorStop(1, 'rgba(14, 165, 233, 0.18)');
+  ctx.fillStyle = glassGrad;
+
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+  ctx.fill();
+
+  // 2. Specular glass borders (Prismatic refraction rim)
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
+  ctx.stroke();
+
+  // 3. Top specular light streak
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.beginPath();
+  ctx.moveTo(x + r, y + 1);
+  ctx.lineTo(x + w - r, y + 1);
+  ctx.stroke();
+
+  // 4. Subtle diagonal glare reflection inside glass
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x + 1, y + 1, w - 2, h - 2, r - 1) : ctx.rect(x + 1, y + 1, w - 2, h - 2);
+  ctx.clip();
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.beginPath();
+  ctx.moveTo(x + 8, y);
+  ctx.lineTo(x + 18, y);
+  ctx.lineTo(x + 10, y + h);
+  ctx.lineTo(x, y + h);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // 5. Crystal Glowing Title Typography
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowColor = 'rgba(56, 189, 248, 0.9)';
+  ctx.shadowBlur = 6;
+  ctx.fillStyle = '#f0f9ff';
+  ctx.fillText(title, centerX, y + h / 2 + 1);
+
+  ctx.restore();
+}
+
+/**
+ * Draws active power-up status badges in the top margin of the playfield
+ */
+export function drawActivePowerUpBadges(
+  ctx: CanvasRenderingContext2D,
+  activeTimers: Map<PowerUpType, { totalDuration: number; remainingTime: number }>,
+  balls: Ball[],
+  x: number,
+  y: number
+) {
+  const hasFireball = balls.some(b => b.isFireball);
+  const hasSlowBall = balls.some(b => b.ballPower === 'slow_ball');
+  const hasFastBall = balls.some(b => b.ballPower === 'fast_ball');
+
+  let curX = x;
+
+  const drawPill = (label: string, bg: string, border: string, textCol: string) => {
+    ctx.save();
+    ctx.font = 'bold 11px "Sniglet", sans-serif';
+    const tw = ctx.measureText(label).width;
+    const pw = tw + 14;
+    const ph = 19;
+
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(curX - pw, y, pw, ph, 5) : ctx.rect(curX - pw, y, pw, ph);
+    ctx.fill();
+
+    ctx.strokeStyle = border;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = textCol;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, curX - pw / 2, y + ph / 2 + 1);
+    ctx.restore();
+
+    curX -= pw + 6;
+  };
+
+  if (hasFireball) {
+    drawPill('🔥 FIRE BALL', 'rgba(194, 65, 12, 0.75)', '#fb923c', '#ffedd5');
+  } else if (hasSlowBall) {
+    drawPill('❄ SLOW BALL', 'rgba(8, 145, 178, 0.75)', '#22d3ee', '#ecfeff');
+  } else if (hasFastBall) {
+    drawPill('⚡ FAST BALL', 'rgba(180, 83, 9, 0.75)', '#f59e0b', '#fef9c3');
+  }
+
+  for (const [type, state] of activeTimers.entries()) {
+    if (state.totalDuration > 0 && state.remainingTime > 0) {
+      const pct = Math.max(0, state.remainingTime / state.totalDuration);
+      if (type === 'laser') {
+        drawPill(`🔫 LASER ${Math.ceil(state.remainingTime / 1000)}s`, 'rgba(161, 98, 7, 0.75)', '#fde047', '#fef08a');
+      } else if (type === 'sticky') {
+        drawPill(`🧲 STICKY ${Math.ceil(state.remainingTime / 1000)}s`, 'rgba(109, 40, 217, 0.75)', '#c084fc', '#f3e8ff');
+      } else if (type === 'shield') {
+        drawPill('🛡 SHIELD', 'rgba(29, 78, 216, 0.75)', '#60a5fa', '#eff6ff');
+      }
+    }
+  }
 }

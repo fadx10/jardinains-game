@@ -6,6 +6,7 @@ export type SoundEffect =
   | 'wall'
   | 'brick_hit'
   | 'brick_break'
+  | 'glass_shatter'
   | 'unbreakable_hit'
   | 'bonus_brick'
   | 'nain_hit'
@@ -232,6 +233,53 @@ class SoundEngine {
             osc.start(noteStart);
             osc.stop(noteStart + 0.17);
           });
+          break;
+        }
+
+        // 4d. Glass Tile Shatter - Crisp crystalline chime + high-frequency fracture crackle
+        case 'glass_shatter': {
+          // Sharp glass crystalline chimes
+          const glassTones = [2200, 3150, 4400];
+          glassTones.forEach((freq, idx) => {
+            if (!this.ctx || !this.masterGain) return;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            const noteStart = now + idx * 0.015;
+            osc.frequency.setValueAtTime(freq * pitch, noteStart);
+            osc.frequency.exponentialRampToValueAtTime(freq * 0.7 * pitch, noteStart + 0.18);
+
+            gain.gain.setValueAtTime(0.28 / (idx + 1), noteStart);
+            gain.gain.exponentialRampToValueAtTime(0.001, noteStart + 0.2);
+
+            osc.connect(gain);
+            gain.connect(this.masterGain);
+            osc.start(noteStart);
+            osc.stop(noteStart + 0.22);
+          });
+
+          // High-frequency fracture noise crackle
+          const noiseBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.14, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < noiseBuffer.length; i++) {
+            output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.03));
+          }
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = noiseBuffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'highpass';
+          filter.frequency.setValueAtTime(3500, now);
+
+          const noiseGain = this.ctx.createGain();
+          noiseGain.gain.setValueAtTime(0.32, now);
+          noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+
+          noise.connect(filter);
+          filter.connect(noiseGain);
+          noiseGain.connect(this.masterGain);
+          noise.start(now);
+          noise.stop(now + 0.15);
           break;
         }
 
