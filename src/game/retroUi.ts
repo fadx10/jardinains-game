@@ -629,48 +629,59 @@ export function drawActivePowerUpBadges(
 
   let curX = x;
 
-  const drawPill = (label: string, bg: string, border: string, textCol: string) => {
+  const drawPill = (emoji: string, bg: string, border: string, timerSec?: number) => {
     ctx.save();
-    ctx.font = 'bold 11px "Sniglet", sans-serif';
-    const tw = ctx.measureText(label).width;
-    const pw = tw + 14;
-    const ph = 19;
+    const hasTimer = timerSec !== undefined && timerSec > 0;
+    const pw = hasTimer ? 42 : 28;
+    const ph = 24;
 
     ctx.fillStyle = bg;
     ctx.beginPath();
-    ctx.roundRect ? ctx.roundRect(curX - pw, y, pw, ph, 5) : ctx.rect(curX - pw, y, pw, ph);
+    ctx.roundRect ? ctx.roundRect(curX - pw, y, pw, ph, 6) : ctx.rect(curX - pw, y, pw, ph);
     ctx.fill();
 
     ctx.strokeStyle = border;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    ctx.fillStyle = textCol;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(label, curX - pw / 2, y + ph / 2 + 1);
+    ctx.font = '15px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+
+    if (hasTimer) {
+      ctx.fillText(emoji, curX - pw + 13, y + ph / 2);
+      ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${timerSec}s`, curX - 11, y + ph / 2);
+    } else {
+      ctx.fillText(emoji, curX - pw / 2, y + ph / 2);
+    }
     ctx.restore();
 
     curX -= pw + 6;
   };
 
   if (hasFireball) {
-    drawPill('🔥 FIRE BALL', 'rgba(194, 65, 12, 0.75)', '#fb923c', '#ffedd5');
+    drawPill('🔥', 'rgba(194, 65, 12, 0.85)', '#fb923c');
   } else if (hasSlowBall) {
-    drawPill('❄ SLOW BALL', 'rgba(8, 145, 178, 0.75)', '#22d3ee', '#ecfeff');
+    drawPill('❄️', 'rgba(8, 145, 178, 0.85)', '#22d3ee');
   } else if (hasFastBall) {
-    drawPill('⚡ FAST BALL', 'rgba(180, 83, 9, 0.75)', '#f59e0b', '#fef9c3');
+    drawPill('⚡', 'rgba(180, 83, 9, 0.85)', '#f59e0b');
   }
 
   for (const [type, state] of activeTimers.entries()) {
     if (state.totalDuration > 0 && state.remainingTime > 0) {
-      const pct = Math.max(0, state.remainingTime / state.totalDuration);
+      const timeSec = Math.ceil(state.remainingTime / 1000);
       if (type === 'laser') {
-        drawPill(`🔫 LASER ${Math.ceil(state.remainingTime / 1000)}s`, 'rgba(161, 98, 7, 0.75)', '#fde047', '#fef08a');
+        drawPill('🔫', 'rgba(161, 98, 7, 0.85)', '#fde047', timeSec);
       } else if (type === 'sticky') {
-        drawPill(`🧲 STICKY ${Math.ceil(state.remainingTime / 1000)}s`, 'rgba(109, 40, 217, 0.75)', '#c084fc', '#f3e8ff');
+        drawPill('🧲', 'rgba(109, 40, 217, 0.85)', '#c084fc', timeSec);
       } else if (type === 'shield') {
-        drawPill('🛡 SHIELD', 'rgba(29, 78, 216, 0.75)', '#60a5fa', '#eff6ff');
+        drawPill('🛡️', 'rgba(29, 78, 216, 0.85)', '#60a5fa', timeSec);
+      } else if (type === 'expand') {
+        drawPill('↔️', 'rgba(37, 99, 235, 0.85)', '#60a5fa', timeSec);
+      } else if (type === 'shrink') {
+        drawPill('🤏', 'rgba(220, 38, 38, 0.85)', '#f87171', timeSec);
       }
     }
   }

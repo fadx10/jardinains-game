@@ -42,6 +42,18 @@ export function getLevelName(lvlIndex: number): string {
   return `${prefix} ${noun} ${worldNum}-${stageInWorld}`;
 }
 
+// Helper to determine the number of Jardinains scaling progressively with level
+export function getNainCountForLevel(lvlIndex: number): number {
+  if (lvlIndex === 0) return 1;          // Level 1: 1 'nain
+  if (lvlIndex <= 2) return 2;          // Levels 2-3: 2 'nains
+  if (lvlIndex <= 5) return 3;          // Levels 4-6: 3 'nains
+  if (lvlIndex <= 11) return 4;         // Levels 7-12: 4 'nains
+  if (lvlIndex <= 24) return 5;         // Levels 13-25: 5 'nains
+  if (lvlIndex <= 49) return 6;         // Levels 26-50: 6 'nains
+  if (lvlIndex <= 89) return 7;         // Levels 51-90: 7 'nains
+  return 8;                             // Levels 91+: 8 'nains!
+}
+
 // Helper to create grid patterns for any of the 1000 levels
 export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpawns: LevelConfig['nainSpawns'] } {
   const rows = Math.min(9, 5 + Math.floor((lvlIndex % 100) / 22));
@@ -64,10 +76,13 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
     return {
       grid: heartGrid,
       nainSpawns: [
-        { x: 180, y: 35, hatType: 'gold', color: '#fbbf24' },
-        { x: 340, y: 35, hatType: 'green', color: '#10b981' },
-        { x: 440, y: 35, hatType: 'blue', color: '#3b82f6' },
-        { x: 600, y: 35, hatType: 'red', color: '#f43f5e' },
+        { x: 140, y: 35, hatType: 'gold', color: '#fbbf24' },
+        { x: 220, y: 35, hatType: 'red', color: '#ef4444' },
+        { x: 300, y: 35, hatType: 'green', color: '#10b981' },
+        { x: 380, y: 35, hatType: 'blue', color: '#3b82f6' },
+        { x: 460, y: 35, hatType: 'blue', color: '#3b82f6' },
+        { x: 540, y: 35, hatType: 'green', color: '#10b981' },
+        { x: 620, y: 35, hatType: 'red', color: '#ef4444' },
         { x: 390, y: 90, hatType: 'gold', color: '#fbbf24' },
       ],
     };
@@ -88,33 +103,104 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
     return {
       grid: heartGrid,
       nainSpawns: [
-        { x: 200, y: 35, hatType: 'red', color: '#ef4444' },
-        { x: 390, y: 35, hatType: 'green', color: '#10b981' },
-        { x: 580, y: 35, hatType: 'blue', color: '#3b82f6' },
-        { x: 390, y: 80, hatType: 'red', color: '#f43f5e' },
+        { x: 160, y: 35, hatType: 'red', color: '#ef4444' },
+        { x: 250, y: 35, hatType: 'green', color: '#10b981' },
+        { x: 340, y: 35, hatType: 'blue', color: '#3b82f6' },
+        { x: 440, y: 35, hatType: 'blue', color: '#3b82f6' },
+        { x: 530, y: 35, hatType: 'green', color: '#10b981' },
+        { x: 620, y: 35, hatType: 'red', color: '#ef4444' },
+        { x: 390, y: 80, hatType: 'gold', color: '#fbbf24' },
       ],
     };
   }
 
-  // Level 1: "Garden Gate" - Welcoming layout with Normal, Strong, a Power-up, Bonus Star and Glass Tiles
+  // Level 1: "Garden Gate" - Simple, welcoming 3 rows of 1-hit bricks with 2 power-ups
   if (lvlIndex === 0) {
     const l1Grid = [
-      [5, 8, 1, 2, 2, 7, 7, 2, 2, 1, 8, 5],
-      [1, 1, 8, 3, 6, 1, 1, 6, 3, 8, 1, 1],
-      [1, 2, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1],
-      [0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0],
-      [0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 1, 1, 6, 1, 1, 1, 1, 6, 1, 1, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
     ];
     return {
       grid: l1Grid,
       nainSpawns: [
-        { x: 230, y: 40, hatType: 'red', color: '#ef4444' },
-        { x: 550, y: 40, hatType: 'green', color: '#10b981' },
+        { x: 390, y: 38, hatType: 'red', color: '#ef4444' },
       ],
     };
   }
 
-  const patternType = lvlIndex % 18;
+  // Level 2: "Emerald Arch" - Introduces 2-hit bricks and bonus stars
+  if (lvlIndex === 1) {
+    const l2Grid = [
+      [0, 2, 2, 2, 2, 7, 7, 2, 2, 2, 2, 0],
+      [1, 1, 1, 1, 6, 1, 1, 6, 1, 1, 1, 1],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+      [0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+    ];
+    return {
+      grid: l2Grid,
+      nainSpawns: [
+        { x: 250, y: 40, hatType: 'red', color: '#ef4444' },
+        { x: 530, y: 40, hatType: 'green', color: '#10b981' },
+      ],
+    };
+  }
+
+  // Level 3: "Amber Steps" - Stepped pyramid introducing 3-hit slate bricks
+  if (lvlIndex === 2) {
+    const l3Grid = [
+      [0, 0, 0, 0, 0, 7, 7, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0],
+      [0, 0, 0, 2, 2, 6, 6, 2, 2, 0, 0, 0],
+      [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+      [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    ];
+    return {
+      grid: l3Grid,
+      nainSpawns: [
+        { x: 260, y: 40, hatType: 'green', color: '#10b981' },
+        { x: 520, y: 40, hatType: 'blue', color: '#3b82f6' },
+      ],
+    };
+  }
+
+  // Level 4: "Crystal Garden" - Introduces brittle Glass Bricks (type 8) on the front line
+  if (lvlIndex === 3) {
+    const l4Grid = [
+      [2, 2, 3, 3, 2, 7, 7, 2, 3, 3, 2, 2],
+      [8, 8, 8, 6, 8, 8, 8, 8, 6, 8, 8, 8],
+      [1, 1, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1],
+      [0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0],
+    ];
+    return {
+      grid: l4Grid,
+      nainSpawns: [
+        { x: 190, y: 38, hatType: 'red', color: '#ef4444' },
+        { x: 390, y: 38, hatType: 'blue', color: '#3b82f6' },
+        { x: 590, y: 38, hatType: 'green', color: '#10b981' },
+      ],
+    };
+  }
+
+  // Level 5: "The Watchtower" - First introduction of Unbreakable Bricks (type 5) as cornerstones
+  if (lvlIndex === 4) {
+    const l5Grid = [
+      [5, 3, 3, 2, 2, 7, 7, 2, 2, 3, 3, 5],
+      [0, 2, 2, 6, 1, 1, 1, 1, 6, 2, 2, 0],
+      [0, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 0],
+      [0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0],
+    ];
+    return {
+      grid: l5Grid,
+      nainSpawns: [
+        { x: 220, y: 40, hatType: 'blue', color: '#3b82f6' },
+        { x: 390, y: 40, hatType: 'red', color: '#ef4444' },
+        { x: 560, y: 40, hatType: 'green', color: '#10b981' },
+      ],
+    };
+  }
+
+  const patternType = (lvlIndex - 5) % 18;
 
   for (let r = 0; r < rows; r++) {
     const row: number[] = [];
@@ -319,10 +405,15 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
           break;
       }
 
+      // Soften early levels (levels 6 to 12) so dense tricky unbreakable walls appear gradually
+      if (lvlIndex < 12 && cell === 5 && c > 0 && c < cols - 1) {
+        cell = 3; // Replace inner unbreakable bricks with breakable 3-hit bricks
+      }
+
       // Upgrade durability based on stage progression / difficulty
-      if (cell === 1 && rnd < difficulty * 0.4) cell = 2; // Normal -> Strong
-      if (cell === 2 && rnd < difficulty * 0.3) cell = 3; // Strong -> Very Strong
-      if (cell === 3 && rnd < difficulty * 0.25) cell = 4; // Very Strong -> Reinforced
+      if (cell === 1 && rnd < difficulty * 0.45) cell = 2; // Normal -> Strong
+      if (cell === 2 && rnd < difficulty * 0.35) cell = 3; // Strong -> Very Strong
+      if (cell === 3 && rnd < difficulty * 0.30) cell = 4; // Very Strong -> Reinforced
 
       // Sprinkle guaranteed Powerup & Bonus brick if stage has none
       if (cell === 2 && r === 1 && c === 6 && rnd < 0.3) cell = 6;
@@ -336,24 +427,73 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
     grid.push(row);
   }
 
-  // Generate 'Nain spawns (2 to 5 nains depending on level progression)
-  const nainCount = Math.min(5, 2 + Math.floor((lvlIndex % 100) / 24));
+  // Generate 'Nain spawns - increases steadily as the player levels up
+  const nainCount = getNainCountForLevel(lvlIndex);
   const nainSpawns: LevelConfig['nainSpawns'] = [];
-  const step = 650 / (nainCount + 1);
 
-  for (let i = 0; i < nainCount; i++) {
-    const xRnd = seededRandom(lvlIndex * 77 + i * 19);
-    const xPos = 80 + (i + 1) * step + (xRnd - 0.5) * 30;
-    let hatType: 'red' | 'green' | 'blue' | 'gold' = i % 3 === 0 ? 'red' : i % 3 === 1 ? 'green' : 'blue';
-    if ((lvlIndex + 1) % 25 === 0 && i === 0) {
-      hatType = 'gold';
-    } else if (difficulty > 0.6 && i === nainCount - 1 && xRnd < 0.35) {
-      hatType = 'gold';
+  // Identify all grid columns that have at least one solid brick
+  const validCols: { col: number; topRow: number }[] = [];
+  for (let c = 0; c < 12; c++) {
+    for (let r = 0; r < grid.length; r++) {
+      if (grid[r][c] > 0) {
+        validCols.push({ col: c, topRow: r });
+        break;
+      }
     }
-    const color = hatType === 'red' ? '#ef4444' : hatType === 'green' ? '#10b981' : hatType === 'blue' ? '#3b82f6' : '#fbbf24';
+  }
+
+  if (validCols.length === 0) {
+    for (let c = 1; c <= 10; c++) validCols.push({ col: c, topRow: 0 });
+  }
+
+  // Select evenly spaced columns across validCols
+  const chosenCols: { col: number; topRow: number }[] = [];
+  for (let i = 0; i < nainCount; i++) {
+    const slotIdx = Math.floor((i / Math.max(1, nainCount - 1)) * (validCols.length - 1));
+    const candidate = validCols[slotIdx];
+    if (!chosenCols.some(c => c.col === candidate.col)) {
+      chosenCols.push(candidate);
+    }
+  }
+  for (const vc of validCols) {
+    if (chosenCols.length >= nainCount) break;
+    if (!chosenCols.some(c => c.col === vc.col)) {
+      chosenCols.push(vc);
+    }
+  }
+
+  for (let i = 0; i < chosenCols.length; i++) {
+    const { col, topRow } = chosenCols[i];
+    const brickX = 65 + col * (50 + 6);
+    const brickY = 70 + topRow * (20 + 6);
+    const xPos = brickX + (50 - 26) / 2;
+    const yPos = brickY - 30;
+
+    const rndHat = seededRandom(lvlIndex * 77 + i * 19);
+    let hatType: 'red' | 'green' | 'blue' | 'gold' = 'red';
+
+    if (lvlIndex >= 18 && (rndHat < 0.25 || ((lvlIndex + 1) % 25 === 0 && i === 0))) {
+      hatType = 'gold';
+    } else if (lvlIndex >= 6 && rndHat < 0.55) {
+      hatType = 'blue';
+    } else if (lvlIndex >= 2 && rndHat < 0.85) {
+      hatType = 'green';
+    } else {
+      hatType = 'red';
+    }
+
+    const color =
+      hatType === 'gold'
+        ? '#fbbf24'
+        : hatType === 'blue'
+        ? '#3b82f6'
+        : hatType === 'green'
+        ? '#10b981'
+        : '#ef4444';
+
     nainSpawns.push({
       x: Math.round(xPos),
-      y: 42 + (i % 2) * 20,
+      y: Math.round(yPos),
       hatType,
       color,
     });

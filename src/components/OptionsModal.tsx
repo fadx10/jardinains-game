@@ -1,7 +1,7 @@
 import React from 'react';
 import { 
   Settings, Volume2, VolumeX, Music, Maximize, Minimize, 
-  Keyboard, MousePointer, X, Check, Gamepad2, Heart 
+  Keyboard, MousePointer, X, Check, Gamepad2, Heart, Gauge 
 } from 'lucide-react';
 import { GameOptions } from '../types';
 
@@ -136,6 +136,45 @@ export default function OptionsModal({
                 </span>
               </div>
             )}
+          </div>
+
+          {/* Ball Speed Preference */}
+          <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
+                  <Gauge className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm text-white">Ball Speed</div>
+                  <div className="text-xs text-slate-400">Pace and reaction speed of the ball</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1 border-t border-slate-700/60">
+              {[
+                { id: 'slow', label: 'Slow (Classic)', desc: 'Relaxed & calm' },
+                { id: 'normal', label: 'Normal', desc: 'Standard pace' },
+                { id: 'fast', label: 'Fast', desc: 'High adrenaline' },
+              ].map(speedChoice => {
+                const isSelected = (options.ballSpeed || 'slow') === speedChoice.id;
+                return (
+                  <button
+                    key={speedChoice.id}
+                    onClick={() => onOptionsChange({ ballSpeed: speedChoice.id as 'slow' | 'normal' | 'fast' })}
+                    className={`py-2 px-2 rounded-xl text-center border transition cursor-pointer flex flex-col items-center justify-center ${
+                      isSelected
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-extrabold shadow-md shadow-amber-500/10'
+                        : 'bg-slate-800/80 border-slate-700/80 text-slate-300 hover:border-slate-600 hover:text-white font-medium'
+                    }`}
+                  >
+                    <span className="text-xs">{speedChoice.label}</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">{speedChoice.desc}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Full Screen Mode */}

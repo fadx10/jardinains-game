@@ -23,7 +23,13 @@ const CANVAS_HEIGHT = 600;
 const PADDLE_DEFAULT_WIDTH = 90;
 const PADDLE_HEIGHT = 16;
 const PADDLE_Y = CANVAS_HEIGHT - 40;
-const BALL_DEFAULT_SPEED = 4.6; // Gentle, classic starting ball speed
+const BALL_DEFAULT_SPEED = 2.4; // Relaxed, comfortably slow arcade ball speed
+
+const getBallBaseSpeed = (speedOpt?: 'slow' | 'normal' | 'fast') => {
+  if (speedOpt === 'normal') return 3.2;
+  if (speedOpt === 'fast') return 4.0;
+  return BALL_DEFAULT_SPEED;
+};
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -42,6 +48,7 @@ export default function App() {
     soundVolume: 0.65,
     musicEnabled: true,
     musicVolume: 0.25,
+    ballSpeed: 'slow',
   });
 
   // Modal states
@@ -153,6 +160,20 @@ export default function App() {
     setSoundVolume(updated.soundVolume);
     setMusicEnabled(updated.musicEnabled);
     setMusicVolume(updated.musicVolume);
+
+    if (newOpts.ballSpeed !== undefined) {
+      const targetSpeed = getBallBaseSpeed(newOpts.ballSpeed);
+      const engine = engineRef.current;
+      engine.balls.forEach(b => {
+        const curSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        b.speed = targetSpeed;
+        if (curSpeed > 0 && !b.attachedToPaddle) {
+          b.vx = (b.vx / curSpeed) * targetSpeed;
+          b.vy = (b.vy / curSpeed) * targetSpeed;
+        }
+      });
+    }
+
     try {
       localStorage.setItem('jardinains_options', JSON.stringify(updated));
     } catch {}
@@ -310,7 +331,7 @@ export default function App() {
       y: PADDLE_Y - 8,
       vx: 0,
       vy: 0,
-      speed: BALL_DEFAULT_SPEED,
+      speed: getBallBaseSpeed(options.ballSpeed),
       radius: 6,
       attachedToPaddle: true,
       isFireball: prevIsFireball,
@@ -354,8 +375,9 @@ export default function App() {
     });
 
     // Parse Nains
-    engine.nains = config.nainSpawns.map(ns => {
+    engine.nains = config.nainSpawns.map((ns, idx) => {
       const nain = createParachutingNain(ns.x, ns.y, ns.hatType);
+      nain.relocationTimer = 60000 + idx * 2500;
       return nain;
     });
 
@@ -368,18 +390,23 @@ export default function App() {
   const update = (dt: number) => {
     const engine = engineRef.current;
     
+    // Normalize frame delta relative to standard 60fps (16.667ms)
+    // Clamping protects against tab switching while normalizing 120Hz/144Hz monitors
+    const dtClamped = Math.min(Math.max(dt || 16.667, 4), 33.333);
+    const timeScale = dtClamped / 16.667;
+
     // Paddle movement via keys
-    if (engine.keys['ArrowLeft'] || engine.keys['KeyA']) engine.paddleX -= 8;
-    if (engine.keys['ArrowRight'] || engine.keys['KeyD']) engine.paddleX += 8;
+    if (engine.keys['ArrowLeft'] || engine.keys['KeyA']) engine.paddleX -= 8 * timeScale;
+    if (engine.keys['ArrowRight'] || engine.keys['KeyD']) engine.paddleX += 8 * timeScale;
     engine.paddleX = Math.max(12, Math.min(CANVAS_WIDTH - 12 - engine.paddleWidth, engine.paddleX));
 
     // Powerups tick
-    tickActivePowerUps(engine.activeTimers, dt, engine);
+    tickActivePowerUps(engine.activeTimers, dtClamped, engine);
 
     // Laser firing
     if (engine.laserActiveTime > 0) {
-      engine.laserActiveTime -= dt;
-      if (Math.random() < 0.05) { // Fire rate
+      engine.laserActiveTime -= dtClamped;
+      if (Math.random() < 0.05 * timeScale) { // Fire rate
         engine.projectiles.push({
           id: `laser_${Date.now()}_${Math.random()}`,
           x: engine.paddleX + engine.paddleWidth * 0.2,
@@ -411,9 +438,17 @@ export default function App() {
         continue;
       }
 
+      // Ball speed multiplier is strictly controlled by active powerups
       const bSpeedMult = getBallSpeedMultiplier(engine.activeTimers, [b]);
-      b.x += b.vx * bSpeedMult;
-      b.y += b.vy * bSpeedMult;
+      b.x += b.vx * bSpeedMult * timeScale;
+      b.y += b.vy * bSpeedMult * timeScale;
+
+      // Ensure ball maintains strictly uniform velocity magnitude without automatic acceleration
+      const curSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+      if (curSpeed > 0.001) {
+        b.vx = (b.vx / curSpeed) * b.speed;
+        b.vy = (b.vy / curSpeed) * b.speed;
+      }
 
       // Walls (12px stone arcade border)
       const wallThickness = 12;
@@ -458,7 +493,7 @@ export default function App() {
                   y: PADDLE_Y - 8,
                   vx: 0,
                   vy: 0,
-                  speed: BALL_DEFAULT_SPEED,
+                  speed: getBallBaseSpeed(options.ballSpeed),
                   radius: 6,
                   attachedToPaddle: true
                 });
@@ -598,7 +633,7 @@ export default function App() {
     // Powerups falling
     for (let i = engine.powerups.length - 1; i >= 0; i--) {
       const p = engine.powerups[i];
-      p.y += p.vy;
+      p.y += p.vy * timeScale;
       if (
         p.y + p.h >= PADDLE_Y &&
         p.y <= PADDLE_Y + PADDLE_HEIGHT &&
@@ -623,15 +658,16 @@ export default function App() {
       engine.paddleX, engine.paddleWidth, PADDLE_Y, CANVAS_WIDTH, CANVAS_HEIGHT,
       (pts) => setScore(s => s + pts),
       (cnt) => engine.nainsJuggled += 1,
-      (s, opts) => playSound(s, opts)
+      (s, opts) => playSound(s, opts),
+      dtClamped
     );
 
     // Projectiles
     for (let i = engine.projectiles.length - 1; i >= 0; i--) {
       const pr = engine.projectiles[i];
-      pr.x += pr.vx;
-      pr.y += pr.vy;
-      if (pr.rotation !== undefined && pr.vRot) pr.rotation += pr.vRot;
+      pr.x += pr.vx * timeScale;
+      pr.y += pr.vy * timeScale;
+      if (pr.rotation !== undefined && pr.vRot) pr.rotation += pr.vRot * timeScale;
 
       if (pr.type === 'player_laser') {
         let hit = false;
@@ -667,7 +703,7 @@ export default function App() {
             engine.powerups.push(createPowerUp(nain.x + nain.w / 2, nain.y));
 
             engine.floatingTexts.push({
-              text: `🎯 LASER HIT! +${hitScore}`,
+              text: `🎯 +${hitScore}`,
               x: nain.x + nain.w / 2,
               y: nain.y - 18,
               color: '#38bdf8',
@@ -761,17 +797,17 @@ export default function App() {
     // Particles
     for (let i = engine.particles.length - 1; i >= 0; i--) {
       const p = engine.particles[i];
-      p.x += p.vx;
-      p.y += p.vy;
-      p.alpha -= p.decay;
+      p.x += p.vx * timeScale;
+      p.y += p.vy * timeScale;
+      p.alpha -= p.decay * timeScale;
       if (p.alpha <= 0) engine.particles.splice(i, 1);
     }
 
     // Floating texts
     for (let i = engine.floatingTexts.length - 1; i >= 0; i--) {
       const ft = engine.floatingTexts[i];
-      ft.y += ft.vy;
-      ft.alpha -= 0.02;
+      ft.y += ft.vy * timeScale;
+      ft.alpha -= 0.02 * timeScale;
       if (ft.alpha <= 0) engine.floatingTexts.splice(i, 1);
     }
   };

@@ -60,6 +60,7 @@ export interface Nain {
   isParachuting?: boolean;
   dodgeCooldown?: number;
   hitCooldown?: number;
+  relocationTimer?: number;
 }
 
 export type PowerUpType =

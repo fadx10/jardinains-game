@@ -12,4 +12,5 @@ export interface GameOptions {
   soundVolume: number;
   musicEnabled: boolean;
   musicVolume: number;
+  ballSpeed?: 'slow' | 'normal' | 'fast';
 }

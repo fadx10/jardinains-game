@@ -49,6 +49,7 @@ export function createNain(
     walkCycle: 0,
     isParachuting: false,
     dodgeCooldown: 0,
+    relocationTimer: 60000,
   };
 }
 
@@ -133,6 +134,88 @@ export function findNearbyLedge(
   return null;
 }
 
+// Relocates a Jardinain from its current brick to another solid brick in the level after 1 minute
+export function relocateNain(
+  nain: Nain,
+  bricks: Brick[],
+  particles: Particle[],
+  floatingTexts: FloatingText[],
+  playSound: (sound: SoundEffect, options?: { pitchMult?: number }) => void
+): boolean {
+  if (bricks.length === 0) return false;
+
+  // Find candidate bricks that are solid and not the one currently occupied
+  const candidateBricks = bricks.filter(b => {
+    if (b.hp <= 0) return false;
+    if (nain.standingOnBrickId && b.id === nain.standingOnBrickId) return false;
+    // Prefer bricks where the top surface is clear (no brick directly above it)
+    const isTopBlocked = bricks.some(
+      other =>
+        other.id !== b.id &&
+        other.hp > 0 &&
+        Math.abs((other.x + other.w / 2) - (b.x + b.w / 2)) < b.w * 0.75 &&
+        other.y < b.y &&
+        b.y - (other.y + other.h) <= 12
+    );
+    return !isTopBlocked;
+  });
+
+  const validPool = candidateBricks.length > 0 
+    ? candidateBricks 
+    : bricks.filter(b => b.hp > 0 && b.id !== nain.standingOnBrickId);
+
+  if (validPool.length === 0) return false;
+
+  // Pick a brick that is visibly distinct/distanced (at least 65px horizontally if possible)
+  const distancedBricks = validPool.filter(
+    b => Math.abs((b.x + b.w / 2) - (nain.x + nain.w / 2)) >= 65
+  );
+  const targetBrick = (distancedBricks.length > 0 ? distancedBricks : validPool)[
+    Math.floor(Math.random() * (distancedBricks.length > 0 ? distancedBricks.length : validPool.length))
+  ];
+
+  if (!targetBrick) return false;
+
+  // 1. Departure effects at old spot
+  playSound('poof');
+  for (let p = 0; p < 8; p++) {
+    particles.push({
+      x: nain.x + nain.w / 2,
+      y: nain.y + nain.h / 2,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -Math.random() * 2.5 - 0.5,
+      radius: Math.random() * 3 + 2,
+      color: '#e2e8f0',
+      alpha: 0.9,
+      decay: 0.04,
+    });
+  }
+
+  // Visual relocation indicator & taunt
+  nain.tauntText = 'Moving! 💨';
+  floatingTexts.push({
+    text: 'Moving! 💨',
+    x: nain.x + nain.w / 2,
+    y: nain.y - 14,
+    color: '#38bdf8',
+    alpha: 1,
+    vy: -1.2,
+  });
+
+  // 2. Parachute down onto the target brick from above
+  nain.x = targetBrick.x + (targetBrick.w - nain.w) / 2;
+  nain.y = Math.max(-35, targetBrick.y - 95);
+  nain.vy = 1.4;
+  nain.vx = (Math.random() > 0.5 ? 1 : -1) * nain.baseSpeed;
+  nain.isParachuting = true;
+  nain.state = 'falling';
+  nain.standingOnBrickId = null;
+  nain.throwAnimTimer = 0;
+  nain.relocationTimer = 60000; // Reset 1-minute timer
+
+  return true;
+}
+
 // Main Jardinains update function
 export function updateJardinains(
   nains: Nain[],
@@ -149,7 +232,8 @@ export function updateJardinains(
   canvasHeight: number,
   onScoreGain: (pts: number) => void,
   onNainBounce: (count: number) => void,
-  playSound: (sound: SoundEffect, options?: { pitchMult?: number }) => void
+  playSound: (sound: SoundEffect, options?: { pitchMult?: number }) => void,
+  dt: number = 16.67
 ) {
   for (let i = nains.length - 1; i >= 0; i--) {
     const nain = nains[i];
@@ -283,6 +367,9 @@ export function updateJardinains(
         nain.state = 'idle';
         nain.standingOnBrickId = landingBrick.id;
         nain.tauntText = 'Landed!';
+        if (nain.relocationTimer === undefined || nain.relocationTimer <= 0) {
+          nain.relocationTimer = 60000;
+        }
         playSound('paddle', { pitchMult: 1.4 });
 
         // Puff particles on landing
@@ -337,6 +424,20 @@ export function updateJardinains(
 
       nain.standingOnBrickId = currentBrick.id;
       nain.y = currentBrick.y - nain.h;
+
+      // 1-minute Relocation Timer: Jardinains change place from one brick to another after 1 minute (60,000ms)
+      if (nain.relocationTimer === undefined) {
+        nain.relocationTimer = 60000;
+      }
+      nain.relocationTimer -= dt;
+      if (nain.relocationTimer <= 0) {
+        const moved = relocateNain(nain, bricks, particles, floatingTexts, playSound);
+        if (!moved) {
+          // If no other valid brick exists right now, try again in 15 seconds
+          nain.relocationTimer = 15000;
+        }
+        continue;
+      }
 
       // Handle throwing windup state
       if (nain.state === 'throwing') {
