@@ -1022,16 +1022,21 @@ export default function App() {
             
             {/* Main Menu Overlay */}
             {gameState === 'menu' && (
-              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/90 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
-                <div className="flex flex-col items-center max-w-md w-full my-auto">
+              <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-[radial-gradient(ellipse_at_50%_25%,rgba(20,83,45,0.48),transparent_58%),linear-gradient(145deg,rgba(2,12,7,0.97),rgba(0,0,0,0.94))] backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
+                <div className="flex flex-col items-center max-w-lg w-full my-auto py-3 sm:py-5">
+                  <div className="w-full flex items-center justify-center gap-2 mb-3 text-[10px] sm:text-xs uppercase tracking-[0.28em] text-emerald-300/70 font-bold">
+                    <span className="h-px flex-1 max-w-14 bg-emerald-500/30" />
+                    <span>Classic arcade · 1,000 levels</span>
+                    <span className="h-px flex-1 max-w-14 bg-emerald-500/30" />
+                  </div>
                   {/* Authentic Jardinains Logo Banner from original game */}
                   <JardinainsLogo size="md" showBrickFrame={true} showDedication={true} />
 
-                  <p className="text-[11px] sm:text-xs text-emerald-300/80 font-['Sniglet'] tracking-wide mt-1.5 mb-3 sm:mb-4 text-center">
-                    Classic 1,000-Level Brick Breaker & Nain-Bouncing Arcade
+                  <p className="text-xs sm:text-sm text-emerald-100/80 font-['Sniglet'] tracking-wide mt-2 mb-4 sm:mb-5 text-center max-w-sm leading-relaxed">
+                    Break the bricks. Bounce the nains. Chase the high score.
                   </p>
 
-                  <div className="w-full max-w-xs space-y-2 sm:space-y-2.5 font-['Sniglet']">
+                  <div className="w-full max-w-sm space-y-2.5 sm:space-y-3 font-['Sniglet']">
                     {/* Full Screen Suggestion Tip for Better Gameplay */}
                     {!isFullscreen && !dismissFullscreenTip && (
                       <div className="p-2 sm:p-2.5 bg-gradient-to-r from-emerald-950/90 via-[#063311] to-emerald-950/90 border border-emerald-500/50 rounded-xl flex items-center justify-between text-xs text-emerald-200 shadow-md animate-fade-in">
@@ -1079,7 +1084,7 @@ export default function App() {
 
                     <button 
                       onClick={() => startGame(Math.max(0, unlockedLevel - 1))}
-                      className="w-full py-2.5 sm:py-3 bg-gradient-to-b from-[#4ade80] to-[#16a34a] hover:from-[#86efac] hover:to-[#22c55e] text-black font-extrabold text-base sm:text-lg rounded-xl shadow-[0_4px_12px_rgba(34,197,94,0.5)] transition-all flex items-center justify-center gap-2 border-2 border-[#14532d] active:translate-y-0.5 tracking-wider cursor-pointer"
+                      className="w-full min-h-12 sm:min-h-14 py-3 bg-gradient-to-b from-[#86efac] via-[#4ade80] to-[#16a34a] hover:from-[#bbf7d0] hover:to-[#22c55e] text-[#03210d] font-extrabold text-base sm:text-lg rounded-2xl shadow-[0_8px_26px_rgba(34,197,94,0.24)] transition-all flex items-center justify-center gap-2 border border-emerald-200/50 active:translate-y-0.5 tracking-wider cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
                     >
                       <Play className="w-5 h-5 fill-current" /> 
                       {unlockedLevel > 1 ? `CONTINUE (LVL ${unlockedLevel})` : 'START GAME'}
@@ -1087,14 +1092,14 @@ export default function App() {
                     
                     <button 
                       onClick={() => setShowLevelSelect(true)}
-                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-[#86efac] font-bold rounded-xl border-2 border-[#166534] transition flex items-center justify-center gap-2 shadow active:translate-y-0.5 cursor-pointer text-sm sm:text-base"
+                      className="w-full min-h-11 py-2.5 bg-emerald-950/75 hover:bg-emerald-900 text-emerald-100 font-bold rounded-xl border border-emerald-500/35 transition flex items-center justify-center gap-2 shadow-sm active:translate-y-0.5 cursor-pointer text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                     >
                       <Grid className="w-4 h-4 text-[#4ade80]" /> LEVEL SELECT (1,000 LVLS)
                     </button>
                     
                     <button 
                       onClick={() => setShowScores(true)}
-                      className="w-full py-2 bg-[#063311] hover:bg-[#094718] text-amber-300 font-bold rounded-xl border-2 border-[#854d0e]/60 transition flex items-center justify-center gap-2 shadow active:translate-y-0.5 cursor-pointer text-sm sm:text-base"
+                      className="w-full min-h-11 py-2.5 bg-amber-950/40 hover:bg-amber-900/40 text-amber-200 font-bold rounded-xl border border-amber-500/35 transition flex items-center justify-center gap-2 shadow-sm active:translate-y-0.5 cursor-pointer text-sm sm:text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                     >
                       <Trophy className="w-4 h-4 text-amber-400" /> HIGH SCORES
                     </button>
@@ -1102,13 +1107,13 @@ export default function App() {
                     <div className="flex gap-2 pt-0.5">
                       <button 
                         onClick={() => setShowHowToPlay(true)}
-                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
+                        className="flex-1 min-h-10 py-2 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-100 text-xs sm:text-sm font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                       >
                         <HelpCircle className="w-3.5 h-3.5" /> HOW TO PLAY
                       </button>
                       <button 
                         onClick={() => setShowOptions(true)}
-                        className="flex-1 py-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center gap-1 cursor-pointer"
+                        className="flex-1 min-h-10 py-2 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-100 text-xs sm:text-sm font-bold rounded-lg border border-emerald-500/30 transition flex items-center justify-center gap-1.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                       >
                         <Settings className="w-3.5 h-3.5" /> OPTIONS
                       </button>
@@ -1116,7 +1121,7 @@ export default function App() {
                   </div>
 
                   {/* Controls legend */}
-                  <div className="mt-3 pt-2 sm:mt-4 sm:pt-3 border-t border-[#14532d] text-[10px] sm:text-[11px] text-emerald-300/70 font-mono flex items-center justify-around w-full flex-wrap gap-y-1">
+                  <div className="mt-4 pt-3 sm:mt-5 sm:pt-4 border-t border-emerald-500/20 text-[10px] sm:text-[11px] text-emerald-200/65 font-mono flex items-center justify-center w-full flex-wrap gap-x-4 gap-y-2">
                     <span>🖱️ Drag: Mouse/Touch</span>
                     <span>🚀 Launch: Click/Space</span>
                     <span>⏸️ Pause: P/Esc</span>
