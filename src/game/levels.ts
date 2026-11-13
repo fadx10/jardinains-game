@@ -28,6 +28,13 @@ const ARCHITECTURE_NOUNS = [
 export function getLevelName(lvlIndex: number): string {
   const lvlNum = lvlIndex + 1;
   if (lvlNum === 1) return 'Garden Gate';
+  const signatureLevels: Record<number, string> = {
+    24: 'Daisy Carousel', 25: 'Hydrangea Mosaic', 26: 'Rose Heart',
+    27: 'Old Garden Bridge', 28: 'Windmill Meadow', 29: 'Gnome Hat Parade',
+    50: 'The Great Greenhouse', 75: 'Clockwork Flowerbed',
+    150: 'Midnight Meadow', 200: 'The Glass Conservatory',
+  };
+  if (signatureLevels[lvlNum]) return signatureLevels[lvlNum];
   if (lvlNum === 100) return 'Centennial Crown';
   if (lvlNum === 250) return 'Quartermaster Citadel';
   if (lvlNum === 500) return 'Grand Equinox Bastion';
@@ -200,7 +207,7 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
     };
   }
 
-  const patternType = (lvlIndex - 5) % 18;
+  const patternType = (lvlIndex - 5) % 24;
 
   for (let r = 0; r < rows; r++) {
     const row: number[] = [];
@@ -403,6 +410,80 @@ export function generateLevelGrid(lvlIndex: number): { grid: number[][]; nainSpa
             cell = (r % 2 === 0) ? 3 : 2;
           }
           break;
+        case 18: { // Daisy Carousel — petal rings around a jewel centre
+          const nx = (c - 5.5) / 5.2;
+          const ny = (r - (rows - 1) / 2) / ((rows + 1) / 2);
+          const radius = Math.sqrt(nx * nx + ny * ny);
+          const petals = Math.cos(Math.atan2(ny, nx) * 6);
+          if (radius < 0.20) cell = 7;
+          else if (radius < 0.39) cell = 6;
+          else if (radius < 0.83 && petals > -0.68) cell = (petals > 0.42 ? 3 : 2);
+          else if (radius < 0.98 && rnd > 0.25) cell = 1;
+          break;
+        }
+
+        case 19: { // Hydrangea Mosaic — wavy garden paths and flower clusters
+          const pathCenter = 5.5 + Math.sin(r * 0.92 + (lvlIndex % 7) * 0.4) * 2.3;
+          const pathDistance = Math.abs(c - pathCenter);
+          if (pathDistance < 0.72) cell = r % 2 === 0 ? 7 : 6;
+          else if ((c + r) % 5 === 0) cell = 5;
+          else if (pathDistance < 2.3) cell = (r + c) % 2 === 0 ? 3 : 2;
+          else if (rnd > 0.18) cell = 1;
+          break;
+        }
+
+        case 20: { // Rose Heart — a large symmetrical heart-shaped garden
+          const nx = (c - 5.5) / 5.15;
+          const ny = (r / Math.max(1, rows - 1)) * 2 - 1;
+          const heartShape = Math.pow(nx * nx + ny * ny - 1, 3) - nx * nx * ny * ny * ny;
+          if (heartShape <= 0.12) {
+            const core = Math.abs(nx) + Math.abs(ny) * 0.85;
+            if (core < 0.34) cell = 7;
+            else if (core < 0.62) cell = 6;
+            else if (core > 1.05) cell = 3;
+            else cell = (r + c) % 3 === 0 ? 2 : 1;
+          }
+          break;
+        }
+
+        case 21: { // Old Garden Bridge — twin towers joined by a jewel bridge
+          const leftTower = c >= 1 && c <= 3;
+          const rightTower = c >= 8 && c <= 10;
+          const bridgeDeck = r >= 1 && r <= 2 && c >= 3 && c <= 8;
+          if ((leftTower || rightTower) && r <= Math.min(rows - 1, 5)) {
+            cell = r === 0 ? 5 : (r % 2 === 0 ? 3 : 2);
+          } else if (bridgeDeck) {
+            cell = r === 1 && (c === 5 || c === 6) ? 7 : (c === 4 || c === 7 ? 6 : 2);
+          } else if (r >= rows - 2 && c >= 2 && c <= 9) {
+            cell = c === 5 || c === 6 ? 7 : 1;
+          }
+          break;
+        }
+
+        case 22: { // Windmill Meadow — four sweeping arms around a central hub
+          const dx = c - 5.5;
+          const dy = r - (rows - 1) / 2;
+          const cross = Math.abs(dx) < 0.8 || Math.abs(dy) < 0.58;
+          const diagonal = Math.abs(Math.abs(dx) - Math.abs(dy) * 1.65) < 0.85;
+          if (Math.abs(dx) < 0.8 && Math.abs(dy) < 0.7) cell = 7;
+          else if (Math.abs(dx) < 1.7 && Math.abs(dy) < 1.2) cell = 6;
+          else if (cross || diagonal) cell = (r + c) % 2 === 0 ? 3 : 2;
+          else if (r === rows - 1 && c % 2 === 0) cell = 1;
+          break;
+        }
+
+        case 23: { // Gnome Hat Parade — pointed hats above a bearded base
+          const distance = Math.abs(c - 5.5);
+          const hatWidth = Math.min(5.5, (r + 1) * 1.05);
+          if (r < Math.ceil(rows * 0.62) && distance <= hatWidth) {
+            if (r === 0 && distance <= 0.5) cell = 7;
+            else if (distance < 1.4 && r < 3) cell = 6;
+            else cell = (r + c) % 2 === 0 ? 3 : 2;
+          } else if (r >= Math.floor(rows * 0.55) && r <= rows - 1 && distance <= 5) {
+            cell = r === rows - 1 ? 5 : (distance < 2 ? 7 : 1);
+          }
+          break;
+        }
       }
 
       // Soften early levels (levels 6 to 12) so dense tricky unbreakable walls appear gradually
