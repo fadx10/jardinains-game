@@ -987,11 +987,11 @@ export default function App() {
       )}
 
       {/* Main Jardinains Game Arcade Cabinet Window */}
-      <div className={isFullscreen ? "relative z-10 w-full h-full flex flex-col items-center justify-center" : "relative z-10 w-full max-w-5xl flex flex-col items-center my-auto"}>
+      <div className={isFullscreen ? "relative z-10 w-full h-full flex flex-col items-center justify-center" : "relative z-10 w-full max-w-[1600px] flex flex-col items-center my-auto"}>
         
         {/* MOBILE & TABLET TOP HUD (Visible on screens < lg when NOT in fullscreen) */}
         {!isFullscreen && (
-          <div className="w-full lg:hidden bg-[#031c09] border-2 border-[#0b3b17] rounded-xl p-2 sm:p-2.5 mb-2 shadow-lg font-['Sniglet'] flex flex-col gap-1.5">
+          <div className="w-full lg:hidden bg-[#031c09] border-2 border-[#0b3b17] rounded-xl p-2.5 sm:p-3 mb-2.5 shadow-lg font-['Sniglet'] flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h1 
@@ -1010,27 +1010,27 @@ export default function App() {
                 {gameState === 'playing' ? (
                   <button 
                     onClick={() => { setGameState('paused'); stopMusic(); }}
-                    className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                    className="p-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
                     title="Pause Game"
                   >
-                    <Pause className="w-3.5 h-3.5" />
+                    <Pause className="w-4 h-4" />
                   </button>
                 ) : gameState === 'paused' ? (
                   <button 
                     onClick={() => { setGameState('playing'); engineRef.current.lastTime = performance.now(); if (options.musicEnabled) startMusic(); }}
-                    className="p-1.5 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-bold rounded-lg transition flex items-center justify-center"
+                    className="p-2 bg-[#22c55e] hover:bg-[#4ade80] text-black text-xs font-bold rounded-lg transition flex items-center justify-center"
                     title="Resume Game"
                   >
-                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <Play className="w-4 h-4 fill-current" />
                   </button>
                 ) : null}
 
                 <button 
                   onClick={toggleFullscreen}
-                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  className="p-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
                   title={isFullscreen ? "Exit Fullscreen (F)" : "Enter Fullscreen (F)"}
                 >
-                  {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-300" /> : <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />}
+                  {isFullscreen ? <Minimize2 className="w-4 h-4 text-amber-300" /> : <Maximize2 className="w-4 h-4 text-emerald-300" />}
                 </button>
 
                 <button 
@@ -1038,43 +1038,43 @@ export default function App() {
                     const newSound = !options.soundEnabled;
                     saveOptions({ ...options, soundEnabled: newSound });
                   }}
-                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  className="p-2 bg-[#063311] hover:bg-[#094718] text-white text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
                   title="Toggle Sound"
                 >
-                  {options.soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-[#4ade80]" /> : <VolumeX className="w-3.5 h-3.5 text-rose-400" />}
+                  {options.soundEnabled ? <Volume2 className="w-4 h-4 text-[#4ade80]" /> : <VolumeX className="w-4 h-4 text-rose-400" />}
                 </button>
 
                 <button 
                   onClick={() => setShowLevelSelect(true)}
-                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  className="p-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
                   title="Select Level"
                 >
-                  <Grid className="w-3.5 h-3.5" />
+                  <Grid className="w-4 h-4" />
                 </button>
 
                 <button 
                   onClick={() => setShowOptions(true)}
-                  className="p-1.5 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
+                  className="p-2 bg-[#063311] hover:bg-[#094718] text-emerald-200 text-xs font-bold rounded-lg border border-[#166534] transition flex items-center justify-center"
                   title="Options"
                 >
-                  <Settings className="w-3.5 h-3.5" />
+                  <Settings className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             {/* Live Mobile Stats Bar */}
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 pt-1 border-t border-[#0e441c] text-center">
-              <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-                <div className="text-[10px] text-slate-300 font-bold">SCORE</div>
-                <div className="text-sm sm:text-base font-black text-[#86efac]">{score.toLocaleString()}</div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2 border-t border-[#0e441c] text-center">
+              <div className="bg-[#04280e] px-2.5 py-1.5 rounded-lg border border-[#0d4a1f]">
+                <div className="text-[11px] text-slate-300 font-bold">SCORE</div>
+                <div className="text-base sm:text-lg font-black text-[#86efac]">{score.toLocaleString()}</div>
               </div>
               <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-                <div className="text-[10px] text-slate-300 font-bold">LEVEL</div>
-                <div className="text-sm sm:text-base font-black text-[#86efac]">{currentLevelIdx + 1}</div>
+                <div className="text-[11px] text-slate-300 font-bold">LEVEL</div>
+                <div className="text-base sm:text-lg font-black text-[#86efac]">{currentLevelIdx + 1}</div>
               </div>
               <div className="bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-                <div className="text-[10px] text-slate-300 font-bold">LIVES</div>
-                <div className="text-sm sm:text-base font-black text-[#86efac] flex items-center justify-center gap-1">
+                <div className="text-[11px] text-slate-300 font-bold">LIVES</div>
+                <div className="text-base sm:text-lg font-black text-[#86efac] flex items-center justify-center gap-1">
                   <span>{lives}</span>
                   <Heart className="w-3 h-3 fill-rose-500 text-rose-500 inline" />
                 </div>
@@ -1086,7 +1086,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="hidden sm:block bg-[#04280e] px-2 py-1 rounded-lg border border-[#0d4a1f]">
-                  <div className="text-[10px] text-slate-300 font-bold">HIGH SCORE</div>
+                  <div className="text-[11px] text-slate-300 font-bold">HIGH SCORE</div>
                   <div className="text-sm sm:text-base font-black text-amber-300">{topScore.toLocaleString()}</div>
                 </div>
               )}
@@ -1095,10 +1095,10 @@ export default function App() {
         )}
         
         {/* Authentic Jardinains Cabinet Layout */}
-        <div className={isFullscreen ? "w-full h-full bg-black p-0 border-0 shadow-none flex flex-col items-center justify-center relative" : "w-full bg-[#031c09] p-1.5 sm:p-2.5 md:p-3 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col lg:flex-row gap-2 sm:gap-3 items-stretch relative"}>
+        <div className={isFullscreen ? "w-full h-full bg-black p-0 border-0 shadow-none flex flex-col items-center justify-center relative" : "w-full bg-[#031c09] p-1.5 sm:p-2.5 md:p-3 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-[#0b3b17] shadow-[0_20px_60px_rgba(0,0,0,0.95)] flex flex-col lg:flex-row gap-2 sm:gap-3 items-stretch relative lg:h-[min(86svh,900px)]"}>
           
           {/* Authentic Black Gameplay Canvas Frame */}
-          <div className={isFullscreen ? "relative flex-1 bg-black w-full h-full max-h-screen aspect-[4/3] flex items-center justify-center touch-none overflow-hidden" : "relative flex-1 bg-black rounded-lg sm:rounded-xl border border-slate-700/80 sm:border-2 sm:border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] w-full max-h-[65vh] sm:max-h-[72vh] lg:max-h-none flex items-center justify-center touch-none"}>
+          <div className={isFullscreen ? "relative flex-1 bg-black w-full h-full max-h-screen aspect-[4/3] flex items-center justify-center touch-none overflow-hidden" : "relative flex-1 min-w-0 bg-black rounded-lg sm:rounded-xl border border-slate-700/80 sm:border-2 sm:border-slate-200/90 shadow-2xl overflow-hidden aspect-[4/3] w-full max-h-[65vh] sm:max-h-[72vh] lg:aspect-auto lg:h-full lg:max-h-full lg:min-h-0 flex items-center justify-center touch-none"}>
             
             {/* Main Menu Overlay */}
             {gameState === 'menu' && (
@@ -1110,13 +1110,13 @@ export default function App() {
                     <span className="h-px flex-1 max-w-14 bg-emerald-500/30" />
                   </div>
                   {/* Authentic Jardinains Logo Banner from original game */}
-                  <JardinainsLogo size="md" showBrickFrame={true} showDedication={true} />
+                  <JardinainsLogo size="lg" responsive showBrickFrame={true} showDedication={true} />
 
-                  <p className="text-xs sm:text-sm text-emerald-100/80 font-['Sniglet'] tracking-wide mt-2 mb-4 sm:mb-5 text-center max-w-sm leading-relaxed">
+                  <p className="text-xs sm:text-sm text-emerald-100/80 font-['Sniglet'] tracking-wide mt-2 mb-4 sm:mb-5 text-center max-w-md leading-relaxed">
                     Break the bricks. Bounce the nains. Chase the high score.
                   </p>
 
-                  <div className="w-full max-w-sm space-y-2.5 sm:space-y-3 font-['Sniglet']">
+                  <div className="w-full max-w-md space-y-2.5 sm:space-y-3 font-['Sniglet']">
                     {/* Full Screen Suggestion Tip for Better Gameplay */}
                     {!isFullscreen && !dismissFullscreenTip && (
                       <div className="p-2 sm:p-2.5 bg-gradient-to-r from-emerald-950/90 via-[#063311] to-emerald-950/90 border border-emerald-500/50 rounded-xl flex items-center justify-between text-xs text-emerald-200 shadow-md animate-fade-in">
@@ -1312,7 +1312,7 @@ export default function App() {
 
           {/* RIGHT: Authentic Jardinains Forest Green Sidebar (Visible on Desktop lg: when NOT in fullscreen) */}
           {!isFullscreen && (
-            <aside className="hidden lg:flex w-56 lg:w-60 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
+            <aside className="hidden lg:flex w-56 lg:w-64 xl:w-72 bg-gradient-to-b from-[#053213] via-[#04280e] to-[#021808] p-3 sm:p-4 rounded-xl border border-[#0d4a1f] flex-col justify-between font-['Sniglet'] text-white select-none shadow-xl">
               
               {/* Top: Title & Dedication */}
               <div className="flex flex-col items-center">
