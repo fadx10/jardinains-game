@@ -11,6 +11,99 @@ import { Brick, Ball, PowerUpType } from './types';
  */
 
 /**
+ * Classic Jardinains-inspired playfield: a pitch-black starfield, vivid garden
+ * side panels and subtle chapter-coloured nebulae.
+ */
+export function drawClassicPlayfieldBackground(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  levelIndex: number,
+  time: number
+) {
+  const palettes = ['#59e38b', '#65dbe8', '#b78cff', '#ffbd69', '#ff78a8', '#8fb6ff', '#d5ec73', '#ef9dff', '#62e0c5', '#ffd76e'];
+  const accent = palettes[Math.floor(levelIndex / 100) % palettes.length];
+
+  ctx.fillStyle = '#020306';
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+  // Low-contrast coloured light behind the brick formations.
+  const haze = ctx.createRadialGradient(canvasWidth * 0.5, 145, 18, canvasWidth * 0.5, 145, 390);
+  haze.addColorStop(0, accent + '22');
+  haze.addColorStop(0.55, accent + '0b');
+  haze.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = haze;
+  ctx.fillRect(30, 10, canvasWidth - 60, canvasHeight - 20);
+
+  // Deep black play area with a slight vignette, matching the original's contrast.
+  const vignette = ctx.createRadialGradient(canvasWidth / 2, canvasHeight * 0.38, 90, canvasWidth / 2, canvasHeight * 0.42, 570);
+  vignette.addColorStop(0, 'rgba(9,13,19,0.12)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.82)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(12, 12, canvasWidth - 24, canvasHeight - 24);
+
+  // Green floral wallpaper strips on the edges of the playfield.
+  const railWidth = 27;
+  const rail = ctx.createLinearGradient(0, 0, railWidth, 0);
+  rail.addColorStop(0, '#244c20');
+  rail.addColorStop(0.5, '#5b9638');
+  rail.addColorStop(1, '#1d421c');
+  ctx.fillStyle = rail;
+  ctx.fillRect(13, 13, railWidth, canvasHeight - 26);
+  ctx.save();
+  ctx.translate(canvasWidth, 0);
+  ctx.scale(-1, 1);
+  ctx.fillStyle = rail;
+  ctx.fillRect(13, 13, railWidth, canvasHeight - 26);
+  ctx.restore();
+
+  for (let y = 34, row = 0; y < canvasHeight - 18; y += 42, row++) {
+    for (const x of [26, canvasWidth - 26]) {
+      const pulse = 0.14 + (Math.sin(time * 0.0012 + row * 0.8) + 1) * 0.035;
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.fillStyle = '#e8ffd2';
+      for (let petal = 0; petal < 8; petal++) {
+        const angle = (petal / 8) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.ellipse(x + Math.cos(angle) * 5, y + Math.sin(angle) * 5, 2.5, 4, angle, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#fff2a6';
+      ctx.beginPath();
+      ctx.arc(x, y, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // A lively, deterministic starfield. Twinkle is animated without randomising positions.
+  for (let i = 0; i < 118; i++) {
+    const x = 42 + ((i * 137.507 + 19) % (canvasWidth - 84));
+    const y = 18 + ((i * 73.117 + 31) % (canvasHeight - 36));
+    const twinkle = 0.22 + (Math.sin(time * (0.0011 + (i % 5) * 0.00022) + i * 1.73) + 1) * 0.24;
+    const radius = i % 13 === 0 ? 1.8 : (i % 4 === 0 ? 1.15 : 0.7);
+    ctx.globalAlpha = twinkle;
+    ctx.fillStyle = i % 7 === 0 ? accent : (i % 5 === 0 ? '#8dd8ff' : '#ffffff');
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (i % 13 === 0) {
+      ctx.globalAlpha = twinkle * 0.5;
+      ctx.fillRect(x - 0.5, y - 4, 1, 8);
+      ctx.fillRect(x - 4, y - 0.5, 8, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  // Fine inner frame accent.
+  ctx.strokeStyle = accent + '55';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(40.5, 12.5, canvasWidth - 81, canvasHeight - 25);
+}
+
+/**
  * Draws the classic Jardinains playfield border frame (thin crisp arcade outline)
  */
 export function drawArcadeBorder(
@@ -392,6 +485,59 @@ export function drawClassicPaddle(
  * Draws the 3D chrome sphere or fiery fireball
  */
 export function drawClassicBall(ctx: CanvasRenderingContext2D, b: Ball) {
+  // Glowing motion streak, one of the signature effects of classic arcade play.
+  const speed = Math.hypot(b.vx, b.vy);
+  if (speed > 0.25 && !b.attachedToPaddle) {
+    const length = b.isFireball || b.ballPower === 'explosive_ball' ? 42 : 30;
+    const tailX = b.x - (b.vx / speed) * length;
+    const tailY = b.y - (b.vy / speed) * length;
+    const trailColor = b.isFireball ? '249,115,22' :
+      b.ballPower === 'slow_ball' ? '34,211,238' :
+      b.ballPower === 'fast_ball' ? '250,204,21' :
+      b.ballPower === 'explosive_ball' ? '251,146,60' : '210,240,255';
+    const trail = ctx.createLinearGradient(b.x, b.y, tailX, tailY);
+    trail.addColorStop(0, `rgba(${trailColor},0.72)`);
+    trail.addColorStop(0.45, `rgba(${trailColor},0.24)`);
+    trail.addColorStop(1, `rgba(${trailColor},0)`);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = trail;
+    ctx.lineWidth = b.isFireball ? 9 : 6;
+    ctx.lineCap = 'round';
+    ctx.shadowColor = `rgba(${trailColor},0.85)`;
+    ctx.shadowBlur = b.isFireball || b.ballPower === 'explosive_ball' ? 13 : 8;
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(tailX, tailY);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (b.ballPower === 'explosive_ball') {
+    const pulse = Math.sin(Date.now() * 0.02) * 1.3;
+    const blast = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius + 8 + pulse);
+    blast.addColorStop(0, '#fff7ed');
+    blast.addColorStop(0.28, '#fdba74');
+    blast.addColorStop(0.62, '#f97316');
+    blast.addColorStop(1, 'rgba(194,65,12,0)');
+    ctx.fillStyle = blast;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius + 8 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+    const core = ctx.createRadialGradient(b.x - 2, b.y - 2, 1, b.x, b.y, b.radius);
+    core.addColorStop(0, '#ffffff');
+    core.addColorStop(0.45, '#fed7aa');
+    core.addColorStop(1, '#ea580c');
+    ctx.fillStyle = core;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffedd5';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    return;
+  }
+
   if (b.isFireball) {
     // Fireball radial aura with animated blazing corona
     const pulse = Math.sin(Date.now() * 0.018) * 1.5;
