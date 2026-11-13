@@ -69,7 +69,7 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     color: '#10b981', // Emerald ice
     glowColor: '#34d399',
     durationMs: 18000, // 18 seconds timed effect
-    conflictsWith: ['fast_ball', 'fireball'],
+    conflictsWith: ['fast_ball', 'fireball', 'explosive_ball'],
     announcement: '❄️ +150',
     sound: 'freeze',
     description: 'Slows down ball velocity by 35% for maximum precision',
@@ -83,7 +83,7 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     color: '#f59e0b', // Electric Amber
     glowColor: '#fbbf24',
     durationMs: 16000, // 16 seconds timed effect, then returns to normal speed!
-    conflictsWith: ['slow_ball', 'fireball'],
+    conflictsWith: ['slow_ball', 'fireball', 'explosive_ball'],
     announcement: '⚡ +150',
     sound: 'powerup',
     description: 'Accelerates ball speed by 35% for rapid combos',
@@ -136,7 +136,7 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     color: '#ea580c', // Blazing flame orange
     glowColor: '#fb923c',
     durationMs: 18000, // Timed fireball
-    conflictsWith: ['slow_ball', 'fast_ball'],
+    conflictsWith: ['slow_ball', 'fast_ball', 'explosive_ball'],
     announcement: '🔥 +150',
     sound: 'powerup',
     description: 'Turns balls into flaming meteors that pierce through bricks',
