@@ -355,6 +355,76 @@ export function drawClassicBeveledBrick(ctx: CanvasRenderingContext2D, b: Brick)
   ctx.quadraticCurveTo(x + w * 0.75, yWave1 + 3, x + w - 4, yWave1 + 1);
   ctx.stroke();
 
+  // Original-style candy tile textures: polka dots, diagonal stripes and jewel centres.
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x + 3, y + 3, w - 6, h - 6);
+  ctx.clip();
+
+  if (b.type === 1) {
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    for (let dx = 9; dx < w - 4; dx += 13) {
+      ctx.beginPath();
+      ctx.arc(x + dx, y + h * 0.55, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (b.type === 2 || b.type === 3) {
+    ctx.strokeStyle = b.type === 3 ? 'rgba(210,245,255,0.5)' : 'rgba(255,255,255,0.34)';
+    ctx.lineWidth = b.type === 3 ? 3 : 1.5;
+    for (let offset = -h; offset < w + h; offset += b.type === 3 ? 13 : 10) {
+      ctx.beginPath();
+      ctx.moveTo(x + offset, y + h);
+      ctx.lineTo(x + offset + h, y);
+      ctx.stroke();
+    }
+  } else if (b.type === 4) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+    ctx.lineWidth = 1;
+    for (let px = x + 9; px < x + w - 4; px += 12) {
+      ctx.beginPath();
+      ctx.moveTo(px, y + 4);
+      ctx.lineTo(px, y + h - 4);
+      ctx.stroke();
+    }
+  } else if (b.type === 6) {
+    ctx.shadowColor = '#f0abfc';
+    ctx.shadowBlur = 7;
+    ctx.fillStyle = 'rgba(255,255,255,0.62)';
+    ctx.beginPath();
+    ctx.moveTo(x + w / 2, y + 3);
+    ctx.lineTo(x + w / 2 + 7, y + h / 2);
+    ctx.lineTo(x + w / 2, y + h - 3);
+    ctx.lineTo(x + w / 2 - 7, y + h / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(126,34,206,0.45)';
+    ctx.beginPath();
+    ctx.moveTo(x + w / 2, y + 5);
+    ctx.lineTo(x + w / 2 + 4, y + h / 2);
+    ctx.lineTo(x + w / 2, y + h - 5);
+    ctx.lineTo(x + w / 2 - 4, y + h / 2);
+    ctx.closePath();
+    ctx.fill();
+  } else if (b.type === 7) {
+    ctx.shadowColor = '#fde047';
+    ctx.shadowBlur = 7;
+    ctx.fillStyle = 'rgba(255,255,220,0.72)';
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    ctx.beginPath();
+    for (let point = 0; point < 10; point++) {
+      const angle = -Math.PI / 2 + point * Math.PI / 5;
+      const radius = point % 2 === 0 ? 6 : 2.8;
+      const px = cx + Math.cos(angle) * radius;
+      const py = cy + Math.sin(angle) * radius;
+      if (point === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+
   // 6. Crack branches if damaged multi-hit brick
   if (maxHp > 1 && hp < maxHp) {
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
