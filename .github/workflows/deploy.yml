@@ -1,5 +1,8 @@
 name: Build and Deploy Jardinains to Hostinger
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -23,6 +26,9 @@ jobs:
       - name: 📦 Install Dependencies
         run: npm ci || npm install
 
+      - name: 🧪 TypeScript Check
+        run: npm run lint
+
       - name: 🏗️ Run Production Build
         run: |
           npm run build
@@ -33,12 +39,29 @@ jobs:
           cp manifest.json build_output/ 2>/dev/null || true
           cp .htaccess build_output/ 2>/dev/null || true
 
+      - name: 📦 Commit generated standalone bundle
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "Production bundle is already up to date."
+          else
+            git commit -m "Sync compiled production bundle"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+
       - name: 🚀 Deploy to Hostinger via FTP
+        if: ${{ env.FTP_SERVER != '' && env.FTP_USERNAME != '' && env.FTP_PASSWORD != '' }}
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
+          server: ${{ env.FTP_SERVER }}
+          username: ${{ env.FTP_USERNAME }}
+          password: ${{ env.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
           protocol: ftps
           local-dir: ./build_output/
