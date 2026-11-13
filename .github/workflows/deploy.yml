@@ -1,4 +1,4 @@
-name: Build and Deploy Jardinains to Hostinger
+name: Build Jardinains for GitHub Pages
 
 permissions:
   contents: write
@@ -11,7 +11,7 @@ on:
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: ⬇️ Checkout Repository
@@ -50,20 +50,3 @@ jobs:
             git commit -m "Sync compiled production bundle"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
-
-      - name: 🚀 Deploy to Hostinger via FTP
-        if: ${{ env.FTP_SERVER != '' && env.FTP_USERNAME != '' && env.FTP_PASSWORD != '' }}
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        env:
-          FTP_SERVER: ${{ secrets.FTP_SERVER }}
-          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        with:
-          server: ${{ env.FTP_SERVER }}
-          username: ${{ env.FTP_USERNAME }}
-          password: ${{ env.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT || 21 }}
-          protocol: ftps
-          local-dir: ./build_output/
-          server-dir: ${{ secrets.FTP_SERVER_DIR || 'public_html/jardinains/' }}
-          dangerous-clean-slate: false
