@@ -1,4 +1,4 @@
-import { PowerUp, PowerUpType, ActivePowerUp, Ball, Particle, FloatingText } from './types';
+import { PowerUp, PowerUpType, ActivePowerUp, Ball, Particle, FloatingText, Nain } from './types';
 import { playSound, SoundEffect } from './audio';
 
 export interface PowerUpConfig {
@@ -141,6 +141,21 @@ export const POWERUP_CONFIGS: Record<PowerUpType, PowerUpConfig> = {
     sound: 'powerup',
     description: 'Turns balls into flaming meteors that pierce through bricks',
   },
+  explosive_ball: {
+    type: 'explosive_ball',
+    label: '💥', shortName: '💥', icon: '💥', symbol: '💥',
+    color: '#f97316', glowColor: '#fdba74', durationMs: 16000,
+    conflictsWith: ['slow_ball', 'fast_ball', 'fireball'],
+    announcement: '💥 BLAST MODE!', sound: 'powerup',
+    description: 'Explosive balls blast nearby bricks when they hit a target',
+  },
+  earthquake: {
+    type: 'earthquake',
+    label: '🌋', shortName: '🌋', icon: '🌋', symbol: '🌋',
+    color: '#a16207', glowColor: '#facc15', durationMs: 0,
+    announcement: '🌋 EARTHQUAKE!', sound: 'powerup',
+    description: 'Knocks every nain off its perch for a brief window of chaos',
+  },
   bonus_points: {
     type: 'bonus_points',
     label: '⭐',
@@ -179,6 +194,8 @@ export const ALL_POWERUP_TYPES: PowerUpType[] = [
   'sticky',
   'laser',
   'fireball',
+  'explosive_ball',
+  'earthquake',
   'bonus_points',
   'shield',
 ];
@@ -186,16 +203,18 @@ export const ALL_POWERUP_TYPES: PowerUpType[] = [
 // Weighted random selection for standard drops (10-20% rate)
 export function getRandomPowerUpType(): PowerUpType {
   const roll = Math.random();
-  if (roll < 0.16) return 'expand';
-  if (roll < 0.28) return 'multiball';
-  if (roll < 0.40) return 'laser';
-  if (roll < 0.52) return 'fireball';
-  if (roll < 0.62) return 'sticky';
-  if (roll < 0.72) return 'slow_ball';
-  if (roll < 0.82) return 'shield';
-  if (roll < 0.90) return 'bonus_points';
-  if (roll < 0.95) return 'heart';
-  return Math.random() < 0.5 ? 'shrink' : 'fast_ball'; // Occasional challenging negative/fast hazard
+  if (roll < 0.12) return 'expand';
+  if (roll < 0.23) return 'multiball';
+  if (roll < 0.33) return 'laser';
+  if (roll < 0.42) return 'fireball';
+  if (roll < 0.52) return 'explosive_ball';
+  if (roll < 0.61) return 'sticky';
+  if (roll < 0.69) return 'slow_ball';
+  if (roll < 0.77) return 'shield';
+  if (roll < 0.85) return 'bonus_points';
+  if (roll < 0.89) return 'earthquake';
+  if (roll < 0.94) return 'heart';
+  return Math.random() < 0.5 ? 'shrink' : 'fast_ball';
 }
 
 export function createPowerUp(x: number, y: number, type?: PowerUpType): PowerUp {
@@ -424,6 +443,8 @@ export function applyPowerUpPickup(
     activeTimers: Map<PowerUpType, { totalDuration: number; remainingTime: number }>;
     particles: Particle[];
     floatingTexts: FloatingText[];
+    nains: Nain[];
+    screenShake: number;
   },
   paddleY: number,
   onScoreGain: (pts: number) => void,
@@ -461,9 +482,10 @@ export function applyPowerUpPickup(
       if (conflictType === 'shrink' || conflictType === 'expand') {
         game.paddleWidth = game.paddleDefaultWidth;
       }
-      if (conflictType === 'fireball') {
+      if (conflictType === 'fireball' || conflictType === 'slow_ball' || conflictType === 'fast_ball' || conflictType === 'explosive_ball') {
         game.balls.forEach(b => {
-          b.isFireball = false;
+          if (b.ballPower === conflictType || conflictType === 'fireball') b.ballPower = undefined;
+          if (conflictType === 'fireball') b.isFireball = false;
         });
       }
     }
@@ -576,6 +598,26 @@ export function applyPowerUpPickup(
       });
       break;
     }
+    case 'explosive_ball': {
+      game.balls.forEach(b => {
+        b.isFireball = false;
+        b.ballPower = 'explosive_ball';
+      });
+      break;
+    }
+    case 'earthquake': {
+      game.screenShake = Math.max(game.screenShake, 9);
+      game.nains.forEach(nain => {
+        if (nain.state === 'splat' || nain.state === 'poof') return;
+        nain.isParachuting = false;
+        nain.standingOnBrickId = null;
+        nain.state = 'falling';
+        nain.vy = -5.5 - Math.random() * 2;
+        nain.vx += (Math.random() - 0.5) * 3;
+        nain.tauntText = 'EARTHQUAKE!';
+      });
+      break;
+    }
     case 'bonus_points': {
       onScoreGain(1000);
       break;
@@ -654,6 +696,10 @@ export function tickActivePowerUps(
             b.ballPower = undefined;
             b.isFireball = false;
           }
+        });
+      } else if (type === 'explosive_ball') {
+        game.balls.forEach(b => {
+          if (b.ballPower === 'explosive_ball') b.ballPower = undefined;
         });
       }
     } else {
