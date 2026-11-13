@@ -1,19 +1,23 @@
 # Jardinains!
 
-A retro brick breaker arcade game inspired by the classic Jardinains! experience.
+A retro brick-breaker arcade game inspired by the classic Jardinains! experience.
 
-Play online: https://digitalphablet.com/jardinains/
+## Play Online
+
+**https://fadx10.github.io/jardinains-game/**
+
+The game is hosted exclusively on GitHub Pages. Pushes to `main` run the TypeScript check and production build, then sync the generated standalone `index.html` bundle used by GitHub Pages.
 
 ## Features
 
-- 1,000 retro levels
-- Classic brick breaker gameplay
+- 1,000 retro levels with varied procedural layouts
+- Classic brick-breaker gameplay
 - Mischievous garden nains
-- Power-ups
+- Power-ups and special ball effects
 - Retro synth-inspired sounds
 - Responsive browser gameplay
 - Full-screen mode
-- PWA support
+- Progressive Web App support
 
 ## Tech Stack
 
@@ -22,11 +26,19 @@ Play online: https://digitalphablet.com/jardinains/
 - Vite
 - Tailwind CSS
 
-## Play Online
+## Local Development
 
-https://digitalphablet.com/jardinains/
+```bash
+npm install
+npm run dev
+```
 
-For the best experience, use full-screen mode while playing.
+Run the production validation and build with:
+
+```bash
+npm run lint
+npm run build
+```
 
 ## Repository
 
