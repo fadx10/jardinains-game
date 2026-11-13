@@ -5,6 +5,7 @@ interface JardinainsLogoProps {
   size?: 'sm' | 'md' | 'lg';
   showBrickFrame?: boolean;
   showDedication?: boolean;
+  responsive?: boolean;
 }
 
 /**
@@ -21,6 +22,7 @@ export default function JardinainsLogo({
   size = 'lg',
   showBrickFrame = true,
   showDedication = true,
+  responsive = false,
 }: JardinainsLogoProps) {
   const scale = size === 'sm' ? 0.55 : size === 'md' ? 0.78 : 1;
 
@@ -29,8 +31,9 @@ export default function JardinainsLogo({
       <div 
         className="relative flex items-center justify-center"
         style={{
-          width: `${Math.round(480 * scale)}px`,
-          height: `${Math.round(175 * scale)}px`,
+          width: responsive ? `min(${Math.round(480 * scale)}px, 100%)` : `${Math.round(480 * scale)}px`,
+          height: responsive ? 'auto' : `${Math.round(175 * scale)}px`,
+          aspectRatio: responsive ? '480 / 175' : undefined,
         }}
       >
         <svg
