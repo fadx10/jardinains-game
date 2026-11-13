@@ -6,7 +6,7 @@ This project is hosted exclusively on **GitHub Pages**:
 
 https://fadx10.github.io/jardinains-game/
 
-Do not add FTP, Hostinger, cPanel, Apache, or DigitalPhablet deployment steps or credentials. GitHub Pages publishes the generated standalone bundle from the repository's `main` branch.
+The GitHub Actions workflow validates the TypeScript project, creates the standalone production bundle, and commits the generated root `index.html` for publication.
 
 ## Source and production HTML
 
