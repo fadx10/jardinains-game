@@ -10,7 +10,8 @@ export interface Ball {
   radius: number;
   attachedToPaddle: boolean;
   isFireball?: boolean;
-  ballPower?: 'fireball' | 'slow_ball' | 'fast_ball' | null;
+  ballPower?: 'fireball' | 'slow_ball' | 'fast_ball' | 'explosive_ball' | null;
+  lastExplodeAt?: number;
 }
 
 export interface Brick {
@@ -74,7 +75,9 @@ export type PowerUpType =
   | 'laser'
   | 'fireball'
   | 'bonus_points'
-  | 'shield';
+  | 'shield'
+  | 'explosive_ball'
+  | 'earthquake';
 
 export interface PowerUp {
   id: string;
