@@ -5,7 +5,7 @@ import { LEVELS, TOTAL_LEVELS, getLevelName } from './game/levels';
 import { playSound, startMusic, stopMusic, setSoundMuted, setMusicEnabled, setSoundVolume, setMusicVolume } from './game/audio';
 import { updateJardinains, drawJardinain, drawProjectile, createParachutingNain, NAIN_WIDTH, NAIN_HEIGHT } from './game/nain';
 import { applyPowerUpPickup, tickActivePowerUps, drawPowerUp, getBallSpeedMultiplier, POWERUP_CONFIGS, createPowerUp } from './game/powerups';
-import { drawArcadeBorder, drawClassicBeveledBrick, drawClassicPaddle, drawClassicBall, drawClassicShield, drawGlassTitlePlaque, drawActivePowerUpBadges } from './game/retroUi';
+import { drawArcadeBorder, drawClassicBeveledBrick, drawClassicPaddle, drawClassicBall, drawClassicShield, drawGlassTitlePlaque, drawActivePowerUpBadges, drawClassicPlayfieldBackground } from './game/retroUi';
 
 // Modals
 import AboutModal from './components/AboutModal';
@@ -87,6 +87,7 @@ export default function App() {
     stickyBall: false,
     laserActiveTime: 0,
     nainsJuggled: 0,
+    screenShake: 0,
     keys: {} as Record<string, boolean>,
     lastTime: performance.now(),
     animationFrameId: 0,
@@ -205,6 +206,84 @@ export default function App() {
     stopMusic();
     setGameState('gameover');
   };
+  // Explosive-ball splash damage: nearby breakable bricks take one extra hit.
+  const detonateExplosiveBall = (impactX: number, impactY: number, sourceBrickId: string) => {
+    const engine = engineRef.current;
+    const blastRadius = 82;
+    let bonusScore = 0;
+    let destroyedCount = 0;
+
+    for (let i = engine.bricks.length - 1; i >= 0; i--) {
+      const target = engine.bricks[i];
+      if (target.id === sourceBrickId || target.unbreakable) continue;
+
+      const cx = target.x + target.w / 2;
+      const cy = target.y + target.h / 2;
+      const distance = Math.hypot(cx - impactX, cy - impactY);
+      if (distance > blastRadius) continue;
+
+      target.hp -= 1;
+      target.flashTimer = 6;
+      const strength = 1 - distance / blastRadius;
+
+      for (let p = 0; p < 4; p++) {
+        const angle = (p / 4) * Math.PI * 2 + Math.random() * 0.3;
+        const speed = 1.4 + strength * 2.2;
+        engine.particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          radius: 1.8 + Math.random() * 1.8,
+          color: ['#fff7ed', '#fdba74', '#fb923c'][p % 3],
+          alpha: 0.95,
+          decay: 0.045,
+          shape: 'star',
+        });
+      }
+
+      if (target.hp <= 0) {
+        engine.bricks.splice(i, 1);
+        destroyedCount++;
+        const points = target.type === 4 ? 200 :
+          target.type === 3 ? 150 :
+          target.type === 2 ? 100 :
+          target.type === 7 ? 250 :
+          target.type === 8 || target.isGlassBrick ? 120 : 50;
+        bonusScore += points;
+        if (target.type === 6) {
+          engine.powerups.push(createPowerUp(cx, target.y + target.h));
+        }
+        engine.floatingTexts.push({
+          text: `+${points}`,
+          x: cx,
+          y: cy,
+          color: '#fdba74',
+          alpha: 1,
+          vy: -1.5,
+        });
+      }
+    }
+
+    if (bonusScore > 0) setScore(current => current + bonusScore);
+    if (destroyedCount > 0) playSound('bonus_brick');
+    engine.screenShake = Math.max(engine.screenShake, 5 + Math.min(4, destroyedCount * 0.45));
+
+    // Expanding orange starburst around the impact point.
+    for (let p = 0; p < 24; p++) {
+      const angle = (p / 24) * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 4;
+      engine.particles.push({
+        x: impactX, y: impactY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        radius: 2 + Math.random() * 2.4,
+        color: ['#fff7ed', '#fdba74', '#f97316', '#facc15'][p % 4],
+        alpha: 1,
+        decay: 0.038,
+        shape: 'star',
+      });
+    }
+  };
 
   // Keyboard
   useEffect(() => {
@@ -316,6 +395,7 @@ export default function App() {
     engine.stickyBall = false;
     engine.laserActiveTime = 0;
     engine.nainsJuggled = 0;
+    engine.screenShake = 0;
 
     if (prevIsFireball) {
       engine.activeTimers.set('fireball', { totalDuration: 0, remainingTime: 0 });
@@ -394,6 +474,7 @@ export default function App() {
     // Clamping protects against tab switching while normalizing 120Hz/144Hz monitors
     const dtClamped = Math.min(Math.max(dt || 16.667, 4), 33.333);
     const timeScale = dtClamped / 16.667;
+    engine.screenShake = Math.max(0, engine.screenShake - 0.22 * timeScale);
 
     // Paddle movement via keys
     if (engine.keys['ArrowLeft'] || engine.keys['KeyA']) engine.paddleX -= 8 * timeScale;
@@ -617,13 +698,19 @@ export default function App() {
                 engine.powerups.push(createPowerUp(brick.x + brick.w/2, brick.y + brick.h));
               }
 
-              // Check level clear
-              if (engine.bricks.filter(b => !b.unbreakable).length === 0) {
-                handleLevelComplete();
-              }
+
             } else {
               playSound((brick.isGlassBrick || brick.type === 8) ? 'glass_shatter' : 'brick_hit');
             }
+          }
+
+          if (b.ballPower === 'explosive_ball' && Date.now() - (b.lastExplodeAt || 0) > 260) {
+            b.lastExplodeAt = Date.now();
+            detonateExplosiveBall(b.x, b.y, brick.id);
+          }
+
+          if (engine.bricks.filter(item => !item.unbreakable).length === 0) {
+            handleLevelComplete();
           }
           break; // One collision per frame
         }
@@ -815,22 +902,14 @@ export default function App() {
   const draw = (ctx: CanvasRenderingContext2D) => {
     const engine = engineRef.current;
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    // 1. Classic Retro Deep Slate & Garden Night Sky Background
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-    bgGrad.addColorStop(0, '#090d16');
-    bgGrad.addColorStop(0.5, '#0c1527');
-    bgGrad.addColorStop(1, '#060a12');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-    // Subtle twinkling stars in the sky
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    for (let s = 0; s < 30; s++) {
-      const sx = ((s * 41 + 17) % (CANVAS_WIDTH - 30)) + 15;
-      const sy = ((s * 31 + 23) % (CANVAS_HEIGHT - 30)) + 15;
-      ctx.fillRect(sx, sy, 2, 2);
+    ctx.save();
+    if (engine.screenShake > 0.1) {
+      const shake = engine.screenShake;
+      ctx.translate(Math.sin(performance.now() * 0.07) * shake, Math.cos(performance.now() * 0.09) * shake * 0.55);
     }
+
+    // Classic black starfield, chapter-coloured glow and patterned garden rails.
+    drawClassicPlayfieldBackground(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, currentLevelIdx, performance.now());
 
     // 2. Stone/Brick Arcade Border Walls (Original Jardinains classic frame)
     drawArcadeBorder(ctx, CANVAS_WIDTH, CANVAS_HEIGHT, 12);
@@ -892,6 +971,7 @@ export default function App() {
 
     // 13. Active PowerUp Status Badges in top right
     drawActivePowerUpBadges(ctx, engine.activeTimers, engine.balls, CANVAS_WIDTH - 18, 15);
+    ctx.restore();
   };
 
   const userHighScore = highScores.length > 0 ? Math.max(...highScores.map(h => h.score), score) : Math.max(score, 125);
