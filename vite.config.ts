@@ -121,8 +121,8 @@ function productionBundleSyncPlugin(): Plugin {
         console.log('✓ Successfully generated and synced standalone production bundle to root index.html and dist/index.html');
       }
 
-      // Ensure supporting assets (.htaccess, favicon.svg, manifest.json) are copied to dist
-      const assetsToCopy = ['.htaccess', 'favicon.svg', 'manifest.json'];
+      // Ensure app identity assets are copied for GitHub Pages.
+      const assetsToCopy = ['favicon.svg', 'manifest.json'];
       for (const asset of assetsToCopy) {
         const src = path.resolve(__dirname, asset);
         const dest = path.resolve(distDir, asset);
