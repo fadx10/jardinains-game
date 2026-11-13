@@ -3,6 +3,10 @@ name: Build Jardinains for GitHub Pages
 permissions:
   contents: write
 
+concurrency:
+  group: jardinains-pages-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches:
@@ -42,5 +46,6 @@ jobs:
             echo "Production bundle is already up to date."
           else
             git commit -m "Sync compiled production bundle"
-            git push origin HEAD:${GITHUB_REF_NAME}
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin HEAD:"${GITHUB_REF_NAME}"
           fi
